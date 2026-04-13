@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <%- include('../partials/head', { title: 'Reading Circles | BookVault' }) %>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        @keyframes fadeUp { from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)} }
+        .fade-up { animation: fadeUp .4s ease forwards; }
+
+        /* Super community card glow */
+        .super-card {
+            border-color: #f59e0b !important;
+            box-shadow: 0 0 0 1px rgba(245,158,11,.3), 0 20px 60px rgba(245,158,11,.12);
+        }
+        .super-card .card-header {
+            background: linear-gradient(135deg, #1c1c28 0%, #1e1b4b 60%, #27272a 100%) !important;
+        }
+        /* Star shimmer */
+        @keyframes starPulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.7;transform:scale(1.2)} }
+        .star-pulse { animation: starPulse 1.8s ease infinite; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen flex flex-col">
+    <%- include('../partials/navbar') %>
+
+    <main class="flex-grow pb-20">
+
+        <!-- ── HERO ───────────────────────────────────────────────────── -->
+        <div class="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 pt-16 pb-24 px-6 text-center relative overflow-hidden">
+            <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(99,102,241,.2),transparent 70%);pointer-events:none"></div>
+            <div class="relative max-w-3xl mx-auto fade-up">
+                <p class="text-indigo-400 font-black text-xs uppercase tracking-[0.3em] mb-4">Community Hub</p>
+                <h1 class="text-5xl md:text-6xl font-black text-white tracking-tight mb-4 leading-tight">
+                    The Reading <span class="text-indigo-400">Circles</span>
+                </h1>
+                <p class="text-slate-400 text-lg mb-10 max-w-xl mx-auto">
+                    Join focused communities. Shared knowledge is the strongest vault.
+                </p>
+                <button onclick="openCreateModal()"
+                        class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-4 rounded-2xl font-black text-sm shadow-2xl shadow-indigo-900 transition-all active:scale-95">
+                    <i class="fas fa-plus-circle"></i> Launch New Circle
+                </button>
+            </div>
+        </div>
+
+        <!-- ── LEGEND ──────────────────────────────────────────────────── -->
+        <!-- <div class="max-w-7xl mx-auto px-6 -mt-6 mb-10 flex flex-wrap gap-3 justify-center">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-full text-xs font-bold text-amber-700">
+                <i class="fas fa-star text-amber-500 star-pulse"></i> Super Community — Premium members & Admin only can post
+            </span>
+            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 border border-indigo-100 rounded-full text-xs font-bold text-indigo-600">
+                <i class="fas fa-users"></i> Open Circle — Anyone can post
+            </span>
+        </div> -->
+
+        <!-- ── GRID ────────────────────────────────────────────────────── -->
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+
+                <% communities.forEach((group, idx) => { %>
+                <div class="group relative bg-white rounded-3xl border-2 overflow-hidden flex flex-col transition-all duration-400 hover:-translate-y-1 hover:shadow-xl fade-up <%= group.isSuper ? 'super-card' : 'border-slate-100' %>"
+                     style="animation-delay: <%= idx * 0.05 %>s">
+
+                    <!-- Card header / banner -->
+                    <div class="card-header relative h-40 overflow-hidden <%= group.isSuper ? '' : 'bg-gradient-to-br from-indigo-600 to-violet-700' %>">
+                        <% if (group.bannerImage) { %>
+                            <img src="<%= group.bannerImage %>" class="w-full h-full object-cover" alt="">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                        <% } %>
+
+                        <!-- Super badge top-right -->
+                        <% if (group.isSuper) { %>
+                        <div class="absolute top-3 right-3 flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider shadow-lg"
+                             style="background:rgba(245,158,11,.95);color:#1c1c28">
+                            <i class="fas fa-star star-pulse"></i> Super
+                        </div>
+                        <% } %>
+
+                        <!-- Category badge bottom-left -->
+                        <div class="absolute bottom-4 left-5">
+                            <span class="px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-full text-white"
+                                  style="background:rgba(255,255,255,.15);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.2)">
+                                <%= group.category %>
+                            </span>
+                        </div>
+
+                        <!-- Icon -->
+                        <div class="absolute bottom-4 right-5 w-12 h-12 rounded-2xl flex items-center justify-center text-white text-2xl"
+                             style="background:rgba(255,255,255,.15);backdrop-filter:blur(8px)">
+                            <i class="fas <%= group.isSuper ? 'fa-star' : 'fa-users' %>"></i>
+                        </div>
+                    </div>
+
+                    <!-- Card body -->
+                    <div class="p-6 flex flex-col flex-grow">
+                        <div class="flex items-start justify-between gap-2 mb-3">
+                            <h3 class="text-xl font-black text-slate-900 leading-tight group-hover:text-indigo-600 transition-colors flex items-center gap-2">
+                                <% if (group.isSuper) { %><i class="fas fa-star text-amber-400 text-base"></i><% } %>
+                                <%= group.name %>
+                            </h3>
+                            <span class="flex-shrink-0 px-2.5 py-1 bg-slate-50 text-slate-500 text-[10px] font-black uppercase tracking-wider rounded-lg">
+                                <%= group.members ? group.members.length : 0 %> members
+                            </span>
+                        </div>
+
+                        <p class="text-slate-500 text-sm leading-relaxed mb-5 line-clamp-3 flex-grow">
+                            <%= group.description %>
+                        </p>
+
+                        Super community info banner
+                        <% if (group.isSuper) { %>
+                        <div class="mb-4 flex items-start gap-2 p-3 rounded-xl text-xs font-medium"
+                             style="background:#fffbeb;border:1px solid #fde68a;color:#92400e">
+                            <i class="fas fa-crown text-amber-500 mt-0.5 flex-shrink-0"></i>
+                            <span>Premium members & Admins can post. Everyone can read official announcements.</span>
+                        </div>
+                        <% } %>
+
+                        <!-- CTA -->
+                        <% const isMember = locals.user && group.members && group.members.some(m => m.toString() === user._id.toString()); %>
+                        <% if (isMember) { %>
+                            <a href="/communities/<%= group._id %>"
+                               class="w-full text-center py-3.5 rounded-2xl font-black text-sm text-white transition-all active:scale-95 flex items-center justify-center gap-2"
+                               style="background:#0f172a">
+                                <i class="fas fa-door-open text-xs"></i> Open Circle
+                            </a>
+                        <% } else { %>
+                            <button onclick="joinCircle('<%= group._id %>')" id="btn-<%= group._id %>"
+                                    class="w-full py-3.5 rounded-2xl font-black text-sm text-white transition-all active:scale-95 flex items-center justify-center gap-2"
+                                    style="background:#4f46e5">
+                                <i class="fas fa-user-plus text-xs"></i> Join Circle
+                            </button>
+                        <% } %>
+                    </div>
+                </div>
+                <% }) %>
+
+                <% if (!communities || communities.length === 0) { %>
+                <div class="col-span-full text-center py-24 bg-white rounded-3xl border-2 border-dashed border-slate-200">
+                    <i class="fas fa-users text-4xl text-slate-200 mb-4 block"></i>
+                    <p class="text-slate-400 font-bold">No circles yet. Be the first to launch one!</p>
+                </div>
+                <% } %>
+            </div>
+        </div>
+    </main>
+
+    <%- include('../partials/footer') %>
+
+    <!-- ── CREATE CIRCLE MODAL ───────────────────────────────────────── -->
+    <div id="createModal" style="display:none"
+         class="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden">
+            <div class="bg-indigo-600 px-8 py-6 flex justify-between items-center">
+                <div>
+                    <h2 class="text-white text-xl font-black">Launch a Circle</h2>
+                    <p class="text-indigo-200 text-xs mt-0.5">Create a reading community</p>
+                </div>
+                <button onclick="closeCreateModal()" class="w-8 h-8 rounded-lg bg-white/20 text-white hover:bg-white/30 flex items-center justify-center">
+                    <i class="fas fa-times text-sm"></i>
+                </button>
+            </div>
+            <div class="p-8">
+                <form id="createCommunityForm" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-1.5">Name *</label>
+                        <input id="newName" required placeholder="e.g. The Sci-Fi Hub"
+                               class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-1.5">Category *</label>
+                        <select id="newCategory" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <option>Tech</option>
+                            <option>Design</option>
+                            <option>Computer Science</option>
+                            <option>Fiction</option>
+                            <option>Self-Help</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-1.5">Description *</label>
+                        <textarea id="newDesc" rows="3" required placeholder="What is this circle about?"
+                                  class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"></textarea>
+                    </div>
+                    <button type="submit" class="w-full py-3.5 rounded-2xl font-black text-white text-sm bg-indigo-600 hover:bg-indigo-700 transition-all">
+                        Create Community
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    function openCreateModal()  { document.getElementById('createModal').style.display = 'flex'; }
+    function closeCreateModal() { document.getElementById('createModal').style.display = 'none'; }
+    document.getElementById('createModal').addEventListener('click', e => { if(e.target===e.currentTarget) closeCreateModal(); });
+
+    document.getElementById('createCommunityForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const payload = {
+            name:        document.getElementById('newName').value.trim(),
+            category:    document.getElementById('newCategory').value,
+            description: document.getElementById('newDesc').value.trim()
+        };
+        try {
+            const res  = await fetch('/communities/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (data.success) {
+                window.location.href = `/communities/${data.communityId}`;
+            } else if (res.status === 401) {
+                Swal.fire({ icon:'warning', title:'Login Required', text:'Please log in to create a circle.', confirmButtonColor:'#4f46e5' })
+                    .then(r => { if(r.isConfirmed) window.location.href='/login'; });
+            } else {
+                Swal.fire({ icon:'error', title:'Error', text: data.message || 'Could not create community' });
+            }
+        } catch(err) {
+            Swal.fire({ icon:'error', title:'Network Error', text:'Please try again.' });
+        }
+    });
+
+    async function joinCircle(id) {
+        const btn = document.getElementById(`btn-${id}`);
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        btn.disabled = true;
+        try {
+            const res  = await fetch(`/communities/${id}/join`, { method:'POST', credentials:'include' });
+            const data = await res.json();
+            if (data.success) {
+                btn.innerHTML = '<i class="fas fa-check mr-1"></i> Joined!';
+                btn.style.background = '#0f172a';
+                setTimeout(() => window.location.href = `/communities/${id}`, 700);
+            } else if (res.status === 401) {
+                Swal.fire({ icon:'warning', title:'Login Required', confirmButtonColor:'#4f46e5' })
+                    .then(r => { if(r.isConfirmed) window.location.href='/login'; });
+                btn.innerHTML = '<i class="fas fa-user-plus text-xs"></i> Join Circle';
+                btn.disabled = false;
+            }
+        } catch(err) {
+            btn.innerHTML = '<i class="fas fa-user-plus text-xs"></i> Join Circle';
+            btn.disabled = false;
+        }
+    }
+    </script>
+</body>
+</html>

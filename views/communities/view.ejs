@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <%- include('../partials/head', { title: community.name + ' | BookVault' }) %>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        @keyframes fadeIn { from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)} }
+        .post-item { animation: fadeIn .3s ease forwards; }
+        /* Super community top bar */
+        .super-banner {
+            background: linear-gradient(135deg,#1c1c28 0%,#1e1b4b 60%,#27272a 100%);
+        }
+        @keyframes starPulse { 0%,100%{opacity:1}50%{opacity:.5} }
+        .star-pulse { animation: starPulse 1.8s ease infinite; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen flex flex-col">
+    <%- include('../partials/navbar') %>
+
+    <!-- ── SUPER COMMUNITY BANNER ──────────────────────────────────────── -->
+    <% if (community.isSuper) { %>
+    <div class="super-banner px-6 py-4">
+        <div class="max-w-5xl mx-auto flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <i class="fas fa-star text-amber-400 text-xl star-pulse"></i>
+                <div>
+                    <p class="text-white font-black text-sm flex items-center gap-2">
+                        <%= community.name %>
+                        <span class="px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-widest bg-amber-500 text-amber-950">Super</span>
+                    </p>
+                    <p class="text-slate-400 text-xs">Official BookVault announcements · Premium members & Admin can post</p>
+                </div>
+            </div>
+            <% if (locals.user && (user.isPremium || user.role === 'admin')) { %>
+                <span class="px-3 py-1.5 rounded-xl text-xs font-black bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center gap-1.5">
+                    <i class="fas fa-crown text-xs"></i>
+                    <%= user.role === 'admin' ? 'Admin — can post' : 'Premium — can post' %>
+                </span>
+            <% } else if (locals.user) { %>
+                <span class="px-3 py-1.5 rounded-xl text-xs font-black bg-slate-700 text-slate-400 border border-slate-600 flex items-center gap-1.5">
+                    <i class="fas fa-eye text-xs"></i> Read-only
+                    <a href="/premium" class="text-amber-400 hover:underline ml-1">Upgrade →</a>
+                </span>
+            <% } %>
+        </div>
+    </div>
+    <% } %>
+
+    <main class="flex-grow pb-20">
+
+        <!-- ── COMMUNITY HEADER ────────────────────────────────────────── -->
+        <div class="bg-white border-b border-slate-100 shadow-sm">
+            <div class="max-w-5xl mx-auto px-6 py-8 flex flex-col md:flex-row md:items-center justify-between gap-5">
+                <div>
+                    <nav class="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">
+                        <a href="/communities" class="hover:text-indigo-600 transition-colors">Communities</a>
+                        <i class="fas fa-chevron-right text-[8px]"></i>
+                        <span class="text-slate-600 flex items-center gap-1.5">
+                            <% if (community.isSuper) { %><i class="fas fa-star text-amber-400 star-pulse"></i><% } %>
+                            <%= community.name %>
+                        </span>
+                    </nav>
+                    <h1 class="text-3xl md:text-4xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+                        <% if (community.isSuper) { %><i class="fas fa-star text-amber-400 text-2xl star-pulse"></i><% } %>
+                        <%= community.name %>
+                    </h1>
+                    <p class="text-slate-500 mt-2 max-w-xl text-sm leading-relaxed"><%= community.description %></p>
+                </div>
+
+                <%# Determine if current user can post %>
+                <% const canPost = locals.user && (!community.isSuper || user.isPremium || user.role === 'admin'); %>
+
+                <% if (canPost) { %>
+                    <button onclick="togglePostModal()"
+                            class="flex-shrink-0 inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl font-black text-sm text-white shadow-lg transition-all active:scale-95"
+                            style="background:#2563eb">
+                        <i class="fas fa-plus-circle"></i> Start Discussion
+                    </button>
+                <% } else if (community.isSuper && locals.user) { %>
+                    <a href="/premium"
+                       class="flex-shrink-0 inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl font-black text-sm shadow-lg transition-all"
+                       style="background:#fffbeb;color:#92400e;border:1px solid #fde68a">
+                        <i class="fas fa-crown text-amber-500"></i> Upgrade to Post
+                    </a>
+                <% } %>
+            </div>
+        </div>
+
+        <!-- ── MAIN CONTENT ────────────────────────────────────────────── -->
+        <div class="max-w-5xl mx-auto px-6 mt-10">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+                <!-- Posts -->
+                <div class="lg:col-span-2 space-y-5">
+                    <% if (posts && posts.length > 0) { %>
+                        <% posts.forEach(post => { %>
+                        <div id="post-<%= post._id %>" class="post-item bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-all p-6 md:p-8">
+
+                            <!-- Pin badge -->
+                            <% if (post.isPinned) { %>
+                            <div class="flex items-center gap-1.5 mb-3 text-amber-600 text-xs font-black uppercase tracking-widest">
+                                <i class="fas fa-thumbtack"></i> Pinned
+                            </div>
+                            <% } %>
+
+                            <!-- Author row -->
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-9 h-9 rounded-xl flex items-center justify-center font-black text-sm text-white flex-shrink-0"
+                                         style="background:hsl(<%= Math.abs((post.author.username||'A').charCodeAt(0)*137)%360 %>,60%,50%)">
+                                        <%= (post.author.username||'A').charAt(0).toUpperCase() %>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-black text-slate-900"><%= post.author.username %></p>
+                                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">
+                                            <%= new Date(post.createdAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) %>
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <!-- Admin controls -->
+                                <% if (locals.user && user.role === 'admin') { %>
+                                <div class="flex items-center gap-1">
+                                    <button onclick="togglePin('<%= post._id %>')" title="Pin/Unpin"
+                                            class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-300 hover:text-amber-500 hover:bg-amber-50 transition-colors">
+                                        <i class="fas fa-thumbtack text-xs"></i>
+                                    </button>
+                                    <button onclick="confirmDeletePost('<%= post._id %>')" title="Delete Post"
+                                            class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors">
+                                        <i class="fas fa-trash text-xs"></i>
+                                    </button>
+                                </div>
+                                <% } %>
+                            </div>
+
+                            <!-- Post content -->
+                            <a href="/communities/<%= community._id %>/posts/<%= post._id %>" class="block group">
+                                <h3 class="text-lg font-black text-slate-800 group-hover:text-indigo-600 transition-colors leading-snug mb-2">
+                                    <%= post.title %>
+                                </h3>
+                                <p class="text-slate-500 text-sm line-clamp-2 leading-relaxed"><%= post.content %></p>
+                            </a>
+
+                            <!-- Footer -->
+                            <div class="mt-5 pt-4 border-t border-slate-50 flex items-center gap-4 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                                <a href="/communities/<%= community._id %>/posts/<%= post._id %>"
+                                   class="flex items-center gap-1.5 hover:text-indigo-600 transition-colors">
+                                    <i class="far fa-comment-dots text-indigo-400"></i>
+                                    <%= post.replies ? post.replies.length : 0 %> Replies
+                                </a>
+                            </div>
+                        </div>
+                        <% }) %>
+                    <% } else { %>
+                        <div class="text-center py-20 bg-white rounded-3xl border-2 border-dashed border-slate-100">
+                            <i class="fas fa-comments text-3xl text-slate-200 mb-4 block"></i>
+                            <p class="font-bold text-slate-400">No discussions yet.</p>
+                            <% if (canPost) { %>
+                                <button onclick="togglePostModal()" class="mt-4 text-sm font-black text-indigo-600 hover:underline">
+                                    Start the first one →
+                                </button>
+                            <% } %>
+                        </div>
+                    <% } %>
+                </div>
+
+                <!-- Sidebar -->
+                <div class="space-y-5">
+                    <!-- Stats -->
+                    <div class="bg-slate-900 rounded-2xl p-6 text-white">
+                        <% if (community.isSuper) { %>
+                        <div class="flex items-center gap-2 mb-4 pb-4 border-b border-slate-700">
+                            <i class="fas fa-star text-amber-400 star-pulse"></i>
+                            <span class="text-xs font-black uppercase tracking-widest text-amber-400">Super Community</span>
+                        </div>
+                        <% } %>
+                        <h3 class="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-4">Circle Stats</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <p class="text-2xl font-black"><%= community.members.length %></p>
+                                <p class="text-[10px] uppercase font-bold text-slate-500 tracking-wider mt-1">Members</p>
+                            </div>
+                            <div>
+                                <p class="text-2xl font-black"><%= posts.length %></p>
+                                <p class="text-[10px] uppercase font-bold text-slate-500 tracking-wider mt-1">Discussions</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- About -->
+                    <div class="bg-white rounded-2xl border border-slate-100 p-5">
+                        <h3 class="text-xs font-black uppercase tracking-widest text-slate-400 mb-3">About</h3>
+                        <p class="text-sm text-slate-600 leading-relaxed"><%= community.description %></p>
+                        <div class="mt-3 pt-3 border-t border-slate-50">
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-50 text-indigo-600">
+                                <i class="fas fa-tag text-xs"></i> <%= community.category %>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <%- include('../partials/footer') %>
+
+    <!-- ── POST MODAL ──────────────────────────────────────────────────── -->
+    <div id="postModal" style="display:none"
+         class="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden">
+            <div style="background:#2563eb" class="px-8 py-6 flex justify-between items-center">
+                <div>
+                    <h2 class="syne text-white text-xl font-black">Start a Discussion</h2>
+                    <p style="color:rgba(255,255,255,.7)" class="text-xs mt-0.5">Posting in /c/<%= community.name %></p>
+                </div>
+                <button onclick="togglePostModal()" class="w-8 h-8 rounded-lg bg-white/20 text-white hover:bg-white/30 flex items-center justify-center">
+                    <i class="fas fa-times text-sm"></i>
+                </button>
+            </div>
+            <% if (canPost) { %>
+            <div class="p-8">
+                <form action="/communities/<%= community._id %>/posts" method="POST" class="space-y-4">
+                    <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-xl mb-2">
+                        <div class="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-black flex-shrink-0"
+                             style="background:#2563eb">
+                            <%= locals.user ? user.username.charAt(0).toUpperCase() : '?' %>
+                        </div>
+                        <span class="text-sm font-bold text-slate-700"><%= locals.user ? user.username : 'Guest' %></span>
+                        <% if (community.isSuper) { %>
+                            <span class="ml-auto flex items-center gap-1 text-[10px] font-black text-amber-600 bg-amber-50 px-2 py-0.5 rounded-lg">
+                                <i class="fas fa-star text-amber-400 text-[9px]"></i>
+                                <%= user.role === 'admin' ? 'Admin' : 'Premium' %>
+                            </span>
+                        <% } %>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-1.5">Title *</label>
+                        <input type="text" name="title" required placeholder="What is this discussion about?"
+                               class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-1.5">Content *</label>
+                        <textarea name="content" rows="5" required placeholder="Share your thoughts..."
+                                  class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"></textarea>
+                    </div>
+                    <button type="submit" class="w-full py-3.5 rounded-2xl font-black text-white text-sm transition-all active:scale-95" style="background:#2563eb">
+                        Post to Circle
+                    </button>
+                </form>
+            </div>
+            <% } %>
+        </div>
+    </div>
+
+    <script>
+    function togglePostModal() {
+        const m = document.getElementById('postModal');
+        m.style.display = m.style.display === 'none' ? 'flex' : 'none';
+    }
+    document.getElementById('postModal').addEventListener('click', e => {
+        if (e.target === e.currentTarget) togglePostModal();
+    });
+
+    async function togglePin(postId) {
+        try {
+            const res  = await fetch(`/admin/posts/${postId}/pin`, {
+                method:'PATCH', headers:{'Content-Type':'application/json'}, credentials:'include'
+            });
+            const data = await res.json();
+            if (data.success) location.reload();
+        } catch(err) { console.error('Pin failed', err); }
+    }
+
+    async function confirmDeletePost(postId) {
+        const result = await Swal.fire({
+            title:'Delete this post?', text:'All replies will also be removed.',
+            icon:'warning', showCancelButton:true,
+            confirmButtonText:'Delete', confirmButtonColor:'#ef4444'
+        });
+        if (result.isConfirmed) {
+            try {
+                const res  = await fetch(`/admin/posts/${postId}`, { method:'DELETE', credentials:'include' });
+                const data = await res.json();
+                if (data.success) {
+                    const el = document.getElementById(`post-${postId}`);
+                    el.style.opacity = '0';
+                    el.style.transform = 'translateY(-8px)';
+                    el.style.transition = 'all .3s ease';
+                    setTimeout(() => el.remove(), 300);
+                }
+            } catch(err) { Swal.fire('Error','Could not delete post','error'); }
+        }
+    }
+    </script>
+</body>
+</html>

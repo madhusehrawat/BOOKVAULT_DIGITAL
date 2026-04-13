@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Join BookVault | Create Account</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .toast {
+            visibility: hidden;
+            min-width: 320px;
+            color: #fff;
+            text-align: center;
+            border-radius: 20px;
+            padding: 16px 24px;
+            position: fixed;
+            z-index: 1000;
+            left: 50%;
+            bottom: 30px;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 15px 35px rgba(37, 99, 235, 0.2);
+            font-weight: 600;
+        }
+        .toast.show { visibility: visible; opacity: 1; bottom: 50px; }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .animate-vault { animation: slideIn 0.5s ease-out forwards; }
+    </style>
+</head>
+<body class="bg-[#f8fafc] font-sans antialiased text-slate-900">
+
+<%- include('partials/navbar') %>
+
+<main class="min-h-[calc(100vh-80px)] flex items-center justify-center px-4 py-12">
+    
+    <div class="w-full max-w-md bg-white rounded-3xl p-8 md:p-10 shadow-2xl shadow-slate-200 border border-slate-100 animate-vault">
+        
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-14 h-14 bg-blue-50 rounded-2xl mb-4">
+                <i class="fas fa-user-plus text-blue-600 text-xl"></i>
+            </div>
+            <h2 class="text-3xl font-black text-slate-900 tracking-tight">Create Account</h2>
+            <p class="text-slate-500 text-sm mt-2 font-medium">Join thousands of readers in the Vault.</p>
+        </div>
+
+        <form id="signupForm" class="space-y-5">
+            <div class="space-y-1">
+                <label class="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1">Reader Handle</label>
+                <div class="relative group">
+                    <i class="fas fa-at absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-600 transition-colors text-sm"></i>
+                    <input type="text" id="username" placeholder="johndoe" required
+                        class="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-50 transition-all text-slate-900 font-semibold placeholder:text-slate-300">
+                </div>
+            </div>
+
+            <div class="space-y-1">
+                <label class="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1">Email Address</label>
+                <div class="relative group">
+                    <i class="fas fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-600 transition-colors text-sm"></i>
+                    <input type="email" id="email" placeholder="name@example.com" required
+                        class="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-50 transition-all text-slate-900 font-semibold placeholder:text-slate-300">
+                </div>
+            </div>
+
+            <div class="space-y-1">
+                <label class="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1">Secret Key</label>
+                <div class="relative group">
+                    <i class="fas fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-600 transition-colors text-sm"></i>
+                    <input type="password" id="password" placeholder="••••••••" required
+                            class="w-full pl-11 pr-12 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-50 transition-all font-semibold">
+                        
+                    <button type="button" id="togglePassword" class="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-300 hover:text-slate-600 transition-colors">
+                        <i class="fas fa-eye" id="eyeIcon"></i>
+                    </button>
+                </div>
+            </div>
+
+            <button type="submit" id="signupBtn"
+                class="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold text-lg shadow-xl shadow-slate-200 hover:bg-blue-600 active:scale-[0.98] transition-all flex items-center justify-center gap-3 mt-4">
+                Initialize Access
+            </button>
+        </form>
+
+        <div class="mt-8 text-center pt-6 border-t border-slate-50">
+            <p class="text-sm text-slate-500 font-medium">
+                Already have an account? 
+                <a href="/login" class="text-blue-600 font-black hover:underline ml-1">Sign In</a>
+            </p>
+        </div>
+    </div>
+</main>
+
+<div id="toast" class="toast"></div>
+
+<script>
+    const toast = document.getElementById("toast");
+    const signupForm = document.getElementById("signupForm");
+    const signupBtn = document.getElementById("signupBtn");
+    const passwordInput = document.getElementById("password");
+    const togglePassword = document.getElementById("togglePassword");
+    const eyeIcon = document.getElementById("eyeIcon");
+
+    // --- Password Visibility Toggle ---
+    togglePassword.addEventListener("click", () => {
+        const type = passwordInput.getAttribute("type") === "password" ? "text" : "password";
+        passwordInput.setAttribute("type", type);
+        eyeIcon.classList.toggle("fa-eye");
+        eyeIcon.classList.toggle("fa-eye-slash");
+    });
+
+    // --- Notification System ---
+    function showNotification(message, isError = true) {
+        toast.innerText = message;
+        toast.style.backgroundColor = isError ? "#ef4444" : "#2563eb"; 
+        toast.classList.add("show");
+        setTimeout(() => { toast.classList.remove("show"); }, 3500);
+    }
+
+    // --- Form Submission ---
+    signupForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        
+        // 1. DATA CLEANING: Convert email to lowercase immediately to match the DB Schema
+        const username = document.getElementById("username").value.trim();
+        const email = document.getElementById("email").value.trim().toLowerCase();
+        const password = document.getElementById("password").value;
+
+        if (password.length < 8) {
+            return showNotification("Secret key must be at least 8 characters.");
+        }
+
+        // 2. LOADING STATE
+        signupBtn.innerHTML = `<i class="fas fa-circle-notch fa-spin text-xl mr-2"></i> Initializing...`;
+        signupBtn.disabled = true;
+
+        try {
+            const res = await fetch("/signup", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username, email, password }) 
+            });
+
+            const data = await res.json();
+            
+            if (data.success || res.status === 200 || res.status === 201) {
+                // 3. PERSISTENCE: Save to both Session and Local storage as a backup
+                // This prevents the "User not found" error on the next page
+                sessionStorage.setItem("verifyEmail", email);
+                localStorage.setItem("verifyEmail", email);
+                
+                showNotification("OTP issued. Synchronizing Vault...", false);
+                
+                setTimeout(() => {
+                    window.location.href = "/verify-otp";
+                }, 1500);
+            } else {
+                // Display specific error from your backend (e.g., "Email already exists")
+                showNotification(data.error || data.message || "Initialization failed.");
+                signupBtn.innerText = "Initialize Access";
+                signupBtn.disabled = false;
+            }
+        } catch (err) {
+            showNotification("Connection error. The Vault is currently offline.");
+            signupBtn.innerText = "Initialize Access";
+            signupBtn.disabled = false;
+        }
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+{
+  "name": "librarymanagementsystem",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js",
+    "build": "npm install",
+    "dev": "nodemon index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cloudinary": "^1.41.3",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^17.4.1",
+    "ejs": "^5.0.1",
+    "express": "^5.2.1",
+    "googleapis": "^171.4.0",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.4.1",
+    "multer": "^2.1.1",
+    "multer-storage-cloudinary": "^4.0.0",
+    "nodemon": "^3.1.14",
+    "pdfkit": "^0.18.0",
+    "web-push": "^3.6.7"
+  }
+}

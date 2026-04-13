@@ -1,0 +1,1412 @@
+<%- include('../partials/head') %>
+<%- include('../partials/navbar') %>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Playfair+Display:wght@700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<style>
+  :root {
+    --ink: #0f0f14;
+    --ink2: #18181f;
+    --muted: #71717a;
+    --border: #e4e4e7;
+    --surface: #f4f4f5;
+    --white: #ffffff;
+    --blue: #2563eb;
+    --blue-light: #eff6ff;
+    --amber: #d97706;
+    --amber-light: #fffbeb;
+    --green: #059669;
+    --green-light: #ecfdf5;
+    --red: #dc2626;
+    --red-light: #fef2f2;
+    --purple: #7c3aed;
+    --purple-light: #f5f3ff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--surface); color: var(--ink); line-height: 1.5; }
+  .display { font-family: 'Playfair Display', serif; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+
+  /* Tab system */
+  .tab-btn { transition: all .2s; }
+  .tab-btn.active { background: var(--ink); color: #fff; }
+  .tab-pane { display: none; }
+  .tab-pane.active { display: block; }
+
+  /* Table rows */
+  .data-row { transition: background .15s; }
+  .data-row:hover { background: #fafafa; }
+
+  /* Stat card hover */
+  .stat-card { transition: transform .2s, box-shadow .2s; }
+  .stat-card:hover { transform: translateY(-4px); box-shadow: 0 16px 48px rgba(0,0,0,.10); }
+
+  /* Modal backdrop */
+  .modal-wrap { backdrop-filter: blur(8px); }
+
+  /* Toggle switch */
+  .toggle-track { width:44px; height:24px; border-radius:99px; transition: background .2s; cursor:pointer; display:inline-flex; align-items:center; padding:2px; }
+  .toggle-thumb { width:20px; height:20px; border-radius:50%; background:#fff; box-shadow:0 1px 4px rgba(0,0,0,.25); transition: transform .2s; }
+  .toggle-track.on { background: var(--amber); }
+  .toggle-track.off { background: #d4d4d8; }
+  .toggle-track.on .toggle-thumb { transform: translateX(20px); }
+
+  /* Search input */
+  .search-input:focus { outline: none; box-shadow: 0 0 0 3px rgba(37,99,235,.15); }
+
+  /* Badge */
+  .badge { display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:99px; font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; }
+
+  /* Pill button */
+  .pill-btn { border-radius:99px; font-weight:700; font-size:12px; padding:6px 16px; transition: all .15s; cursor:pointer; border:none; }
+  .pill-btn:hover { filter: brightness(.92); }
+  .pill-btn:active { transform: scale(.96); }
+
+  /* Inline edit field */
+  .inline-edit { border:none; background:transparent; font-family:inherit; font-size:inherit; font-weight:inherit; color:inherit; width:100%; }
+  .inline-edit:focus { outline:2px solid var(--blue); border-radius:6px; background:#fff; padding:2px 6px; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width:6px; height:6px; }
+  ::-webkit-scrollbar-thumb { background:#d4d4d8; border-radius:99px; }
+
+  @keyframes slideUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+  .slide-up { animation: slideUp .4s cubic-bezier(.16,1,.3,1) forwards; }
+  @keyframes fadeIn { from{opacity:0}to{opacity:1} }
+  .fade-in { animation: fadeIn .3s ease forwards; }
+
+  /* ── DROPDOWN ─────────────────────────────────── */
+  .action-menu-wrap { position:relative; display:inline-block; }
+  .action-menu-btn {
+    display:inline-flex; align-items:center; gap:6px;
+    padding:6px 14px 6px 12px; border-radius:99px;
+    background:var(--ink); color:#fff;
+    font-size:12px; font-weight:700; font-family:inherit;
+    border:none; cursor:pointer; transition: all .15s;
+  }
+  .action-menu-btn:hover { background:#27272a; }
+  .action-menu-btn .chevron { font-size:9px; transition:transform .2s; }
+  .action-menu-btn.open .chevron { transform:rotate(180deg); }
+
+  .action-dropdown {
+    position:absolute; right:0; top:calc(100% + 6px); z-index:100;
+    background:#fff; border:1px solid var(--border);
+    border-radius:14px; padding:6px;
+    box-shadow: 0 12px 40px rgba(0,0,0,.13);
+    min-width:148px;
+    display:none;
+    animation: fadeIn .15s ease;
+  }
+  .action-dropdown.open { display:block; }
+  .action-dropdown a,
+  .action-dropdown button {
+    display:flex; align-items:center; gap:9px;
+    width:100%; padding:9px 12px; border:none; background:none;
+    font-family:inherit; font-size:13px; font-weight:600;
+    color:var(--ink); border-radius:9px; cursor:pointer;
+    text-decoration:none; transition:background .12s;
+    white-space:nowrap;
+  }
+  .action-dropdown a:hover,
+  .action-dropdown button:hover { background:var(--surface); }
+  .action-dropdown .sep { height:1px; background:var(--border); margin:4px 0; }
+  .action-dropdown .danger { color:var(--red); }
+  .action-dropdown .danger:hover { background:var(--red-light); }
+  .action-dropdown .pdf-icon { color:var(--purple); }
+
+  /* Archive badge (replaces status toggle) */
+  .archive-badge { display:inline-flex; align-items:center; gap:4px; padding:4px 12px; border-radius:99px; font-size:11px; font-weight:700; cursor:pointer; border:none; transition:all .2s; }
+  .archive-badge.active-state { background:var(--green-light); color:var(--green); }
+  .archive-badge.archived-state { background:var(--surface); color:var(--muted); border:1px solid var(--border); }
+</style>
+
+<div class="min-h-screen pb-20">
+
+  <!-- ── TOP HEADER ─────────────────────────────────────────────────────── -->
+  <div style="background:var(--ink2)" class="px-8 py-7 mb-8">
+    <div class="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-4">
+      <div>
+        <h1 class="display text-white text-4xl font-black tracking-tight" style="letter-spacing:-0.02em">Admin Control Panel</h1>
+        <p style="color:#71717a;font-size:13px;margin-top:4px;font-weight:500;letter-spacing:0.04em" class="mono">BookVault · System Management</p>
+      </div>
+      <div class="flex gap-3">
+        <button onclick="openAddBookModal()" 
+                style="background:var(--blue)" 
+                class="pill-btn text-white px-5 py-2.5 text-sm flex items-center gap-2 shadow-lg">
+          <i class="fas fa-plus"></i> Add Book
+        </button>
+       
+      </div>
+    </div>
+  </div>
+
+  <div class="max-w-7xl mx-auto px-4 sm:px-8">
+
+    <!-- ── STAT CARDS ──────────────────────────────────────────────────── -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      <div class="stat-card bg-white rounded-2xl p-6 border border-gray-100 shadow-sm slide-up" style="animation-delay:.05s">
+        <div class="flex justify-between items-start mb-3">
+          <span class="text-xs font-bold uppercase tracking-widest" style="color:var(--muted)">Total Books</span>
+          <span style="background:var(--blue-light);color:var(--blue)" class="w-8 h-8 rounded-xl flex items-center justify-center text-sm"><i class="fas fa-book"></i></span>
+        </div>
+        <p class="display text-3xl font-black" style="color:var(--ink)"><%= books.length %></p>
+        <p class="text-xs mt-1" style="color:var(--muted)"><%= books.filter(b=>b.isPremium).length %> premium</p>
+      </div>
+      <div class="stat-card bg-white rounded-2xl p-6 border border-gray-100 shadow-sm slide-up" style="animation-delay:.1s">
+        <div class="flex justify-between items-start mb-3">
+          <span class="text-xs font-bold uppercase tracking-widest" style="color:var(--muted)">Members</span>
+          <span style="background:var(--purple-light);color:var(--purple)" class="w-8 h-8 rounded-xl flex items-center justify-center text-sm"><i class="fas fa-users"></i></span>
+        </div>
+        <p class="display text-3xl font-black" style="color:var(--ink)"><%= stats.userCount %></p>
+        <p class="text-xs mt-1" style="color:var(--muted)"><%= users.filter(u=>u.isPremium).length %> premium</p>
+      </div>
+      <div class="stat-card bg-white rounded-2xl p-6 border border-gray-100 shadow-sm slide-up" style="animation-delay:.15s">
+        <div class="flex justify-between items-start mb-3">
+          <span class="text-xs font-bold uppercase tracking-widest" style="color:var(--muted)">Active Books</span>
+          <span style="background:var(--green-light);color:var(--green)" class="w-8 h-8 rounded-xl flex items-center justify-center text-sm"><i class="fas fa-check-circle"></i></span>
+        </div>
+        <p class="display text-3xl font-black" style="color:var(--ink)"><%= books.filter(b=>b.isActive).length %></p>
+        <p class="text-xs mt-1" style="color:var(--muted)"><%= books.filter(b=>!b.isActive).length %> archived</p>
+      </div>
+      <div class="stat-card bg-white rounded-2xl p-6 border border-gray-100 shadow-sm slide-up" style="animation-delay:.2s">
+        <div class="flex justify-between items-start mb-3">
+          <span class="text-xs font-bold uppercase tracking-widest" style="color:var(--muted)">Communities</span>
+          <span style="background:var(--amber-light);color:var(--amber)" class="w-8 h-8 rounded-xl flex items-center justify-center text-sm"><i class="fas fa-comments"></i></span>
+        </div>
+        <p class="display text-3xl font-black" style="color:var(--ink)"><%= stats.communityCount %></p>
+        <p class="text-xs mt-1" style="color:var(--muted)">Reading circles</p>
+      </div>
+    </div>
+
+    <!-- ── TAB NAVIGATION ──────────────────────────────────────────────── -->
+    <div class="flex gap-2 mb-6 bg-white p-1.5 rounded-2xl border border-gray-100 shadow-sm w-fit">
+      <button onclick="switchTab('books')"   id="tab-books"   class="tab-btn active display text-sm font-bold px-5 py-2.5 rounded-xl">Books</button>
+      <button onclick="switchTab('users')"   id="tab-users"   class="tab-btn display text-sm font-bold px-5 py-2.5 rounded-xl" style="color:var(--muted)">Members</button>
+      <button onclick="switchTab('circles')" id="tab-circles" class="tab-btn display text-sm font-bold px-5 py-2.5 rounded-xl" style="color:var(--muted)">Communities</button>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════════════════
+         TAB 1 — BOOKS
+    ════════════════════════════════════════════════════════════════════ -->
+    <div id="pane-books" class="tab-pane active fade-in">
+      <div class="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+
+        <!-- toolbar -->
+        <div class="p-6 border-b border-gray-50 flex flex-wrap items-center justify-between gap-3">
+          <h2 class="display text-xl font-black" style="color:var(--ink)">Book Catalog</h2>
+          <div class="flex items-center gap-3 flex-wrap">
+            <div class="relative">
+              <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+              <input id="bookSearch" oninput="filterBooks()" placeholder="Search title or author…" 
+                     class="search-input pl-8 pr-4 py-2 rounded-xl text-sm border border-gray-200 w-56 bg-gray-50">
+            </div>
+            <select id="bookFilter" onchange="filterBooks()" class="search-input text-sm border border-gray-200 rounded-xl px-3 py-2 bg-gray-50">
+              <option value="all">All Books</option>
+              <option value="premium">Premium Only</option>
+              <option value="free">Free Only</option>
+              <option value="inactive">Archived</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left" id="booksTable">
+            <thead>
+              <tr style="background:var(--surface)">
+                <th class="px-6 py-4 text-xs font-black uppercase tracking-widest" style="color:var(--muted)">Book</th>
+                <th class="px-6 py-4 text-xs font-black uppercase tracking-widest" style="color:var(--muted)">Category</th>
+                <th class="px-6 py-4 text-xs font-black uppercase tracking-widest" style="color:var(--muted)">Price</th>
+                <th class="px-6 py-4 text-xs font-black uppercase tracking-widest" style="color:var(--muted)">Rating</th>
+                <th class="px-6 py-4 text-xs font-black uppercase tracking-widest" style="color:var(--muted)">Premium</th>
+                <th class="px-6 py-4 text-xs font-black uppercase tracking-widest" style="color:var(--muted)">Archive</th>
+                <th class="px-6 py-4 text-xs font-black uppercase tracking-widest" style="color:var(--muted)">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="booksBody">
+              <% books.forEach(book => { %>
+              <tr class="data-row border-t border-gray-50" 
+                  data-title="<%= book.title.toLowerCase() %>" 
+                  data-author="<%= book.author.toLowerCase() %>"
+                  data-premium="<%= book.isPremium %>"
+                  data-active="<%= book.isActive %>">
+                
+                <!-- Book info — bigger image, bolder title -->
+                <td class="px-6 py-4">
+                  <div class="flex items-center gap-4">
+                    <img src="<%= book.image %>" alt="" class="w-14 h-20 object-cover rounded-xl shadow-md flex-shrink-0" style="box-shadow:0 4px 12px rgba(0,0,0,.15)">
+                    <div>
+                      <p class="display font-black text-base leading-tight" style="color:var(--ink);max-width:180px"><%= book.title %></p>
+                      <p class="text-xs mt-1 font-medium" style="color:var(--muted)">by <%= book.author %></p>
+                    </div>
+                  </div>
+                </td>
+
+                <!-- Category -->
+                <td class="px-6 py-4">
+                  <span class="badge" style="background:var(--blue-light);color:var(--blue)"><%= book.category %></span>
+                </td>
+
+                <!-- Price — inline editable -->
+                <td class="px-6 py-4">
+                  <div class="flex items-center gap-1">
+                    <span class="mono text-xs font-medium" style="color:var(--muted)">$</span>
+                    <input type="number" 
+                           class="inline-edit mono font-bold text-sm w-16" 
+                           style="color:var(--ink)"
+                           value="<%= book.price %>" 
+                           step="0.01" min="0"
+                           onblur="updatePrice('<%= book._id %>', this.value)"
+                           onkeydown="if(event.key==='Enter')this.blur()">
+                  </div>
+                </td>
+
+                <!-- Rating — inline editable -->
+                <td class="px-6 py-4">
+                  <div class="flex items-center gap-1">
+                    <i class="fas fa-star text-amber-400 text-xs"></i>
+                    <input type="number" 
+                           class="inline-edit mono font-bold text-sm w-10" 
+                           style="color:var(--ink)"
+                           value="<%= book.averageRating ? book.averageRating.toFixed(1) : '5.0' %>" 
+                           step="0.1" min="1" max="5"
+                           onblur="updateRating('<%= book._id %>', this.value)"
+                           onkeydown="if(event.key==='Enter')this.blur()">
+                  </div>
+                </td>
+
+                <!-- Premium toggle -->
+                <td class="px-6 py-4">
+                  <div id="premium-track-<%= book._id %>" 
+                       onclick="toggleBookPremium('<%= book._id %>', this)"
+                       class="toggle-track <%= book.isPremium ? 'on' : 'off' %>">
+                    <div class="toggle-thumb"></div>
+                  </div>
+                </td>
+
+                <!-- Archive badge (replaces status toggle) -->
+                <td class="px-6 py-4">
+                  <button id="archive-btn-<%= book._id %>"
+                          onclick="toggleBookStatus('<%= book._id %>', this)"
+                          class="archive-badge <%= book.isActive ? 'active-state' : 'archived-state' %>">
+                    <% if (book.isActive) { %>
+                      <i class="fas fa-check-circle" style="font-size:9px"></i> Active
+                    <% } else { %>
+                      <i class="fas fa-archive" style="font-size:9px"></i> Archived
+                    <% } %>
+                  </button>
+                </td>
+
+                <!-- Actions dropdown -->
+                <td class="px-6 py-4">
+                  <div class="action-menu-wrap">
+                    <button class="action-menu-btn" onclick="toggleDropdown(this)">
+                      Actions <span class="chevron">▼</span>
+                    </button>
+                    <div class="action-dropdown">
+                      <button onclick="openEditBookModal(<%= JSON.stringify(book) %>); closeAllDropdowns()">
+                        <i class="fas fa-pen" style="color:var(--blue);width:14px"></i> Edit
+                      </button>
+                      <button class="pdf-icon" onclick="openPdfManager('<%= book._id %>', '<%= book.title.replace(/'/g, '') %>', '<%= book.pdfPath || '' %>'); closeAllDropdowns()">
+                        <i class="fas fa-file-pdf" style="color:var(--purple);width:14px"></i> PDF
+                      </button>
+                      <div class="sep"></div>
+                      <button class="danger" onclick="confirmDeleteBook('<%= book._id %>', '<%= book.title.replace(/'/g, '') %>'); closeAllDropdowns()">
+                        <i class="fas fa-trash" style="width:14px"></i> Delete
+                      </button>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════════════════
+         TAB 2 — USERS
+    ════════════════════════════════════════════════════════════════════ -->
+    <div id="pane-users" class="tab-pane fade-in">
+      <div class="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+
+        <div class="p-6 border-b border-gray-50 flex flex-wrap items-center justify-between gap-3">
+          <h2 class="display text-xl font-black" style="color:var(--ink)">Member Access Control</h2>
+          <div class="relative">
+            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+            <input id="userSearch" oninput="filterUsers()" placeholder="Search members…" 
+                   class="search-input pl-8 pr-4 py-2 rounded-xl text-sm border border-gray-200 w-56 bg-gray-50">
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left">
+            <thead>
+              <tr style="background:var(--surface)">
+                <th class="px-6 py-4 text-xs font-black uppercase tracking-widest" style="color:var(--muted)">Member</th>
+                <th class="px-6 py-4 text-xs font-black uppercase tracking-widest" style="color:var(--muted)">Joined</th>
+                <th class="px-6 py-4 text-xs font-black uppercase tracking-widest" style="color:var(--muted)">Verified</th>
+                <th class="px-6 py-4 text-xs font-black uppercase tracking-widest" style="color:var(--muted)">Premium</th>
+                <th class="px-6 py-4 text-xs font-black uppercase tracking-widest" style="color:var(--muted)">Library</th>
+                <th class="px-6 py-4 text-xs font-black uppercase tracking-widest" style="color:var(--muted)">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="usersBody">
+              <% users.filter(u => u.role !== 'admin').forEach(user => { %>
+              <tr class="data-row border-t border-gray-50" data-name="<%= user.username.toLowerCase() %>" data-email="<%= user.email.toLowerCase() %>">
+                
+                <td class="px-6 py-4">
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center font-black text-sm text-white flex-shrink-0 display"
+                         style="background: hsl(<%= Math.abs(user.username.charCodeAt(0) * 137) % 360 %>, 60%, 50%)">
+                      <%= user.username.charAt(0).toUpperCase() %>
+                    </div>
+                    <div>
+                      <p class="font-bold text-sm" style="color:var(--ink)"><%= user.username %></p>
+                      <p class="text-xs mono" style="color:var(--muted)"><%= user.email %></p>
+                    </div>
+                  </div>
+                </td>
+
+                <td class="px-6 py-4">
+                  <p class="text-sm" style="color:var(--muted)"><%= new Date(user.createdAt).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) %></p>
+                </td>
+
+                <td class="px-6 py-4">
+                  <% if (user.isVerified) { %>
+                    <span class="badge" style="background:var(--green-light);color:var(--green)"><i class="fas fa-check mr-1"></i>Verified</span>
+                  <% } else { %>
+                    <span class="badge" style="background:var(--red-light);color:var(--red)">Unverified</span>
+                  <% } %>
+                </td>
+
+                <td class="px-6 py-4">
+                  <div id="user-premium-track-<%= user._id %>" 
+                       onclick="toggleUserPremium('<%= user._id %>', this)"
+                       class="toggle-track <%= user.isPremium ? 'on' : 'off' %>">
+                    <div class="toggle-thumb"></div>
+                  </div>
+                </td>
+
+                <td class="px-6 py-4">
+                  <span class="badge mono" style="background:var(--blue-light);color:var(--blue)">
+                    <%= user.library ? user.library.length : 0 %> books
+                  </span>
+                </td>
+
+                <!-- Member Actions dropdown -->
+                <td class="px-6 py-4">
+                  <div class="action-menu-wrap">
+                    <button class="action-menu-btn" onclick="toggleDropdown(this)">
+                      Actions <span class="chevron">▼</span>
+                    </button>
+                    <div class="action-dropdown">
+                      <button onclick="viewUserLibrary('<%= user._id %>', '<%= user.username %>'); closeAllDropdowns()">
+                        <i class="fas fa-book-open" style="color:var(--blue);width:14px"></i> View Library
+                      </button>
+                      <div class="sep"></div>
+                      <button class="danger" onclick="confirmDeleteUser('<%= user._id %>', '<%= user.username %>'); closeAllDropdowns()">
+                        <i class="fas fa-ban" style="width:14px"></i> Ban User
+                      </button>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════════════════
+         TAB 3 — COMMUNITIES
+    ════════════════════════════════════════════════════════════════════ -->
+    <div id="pane-circles" class="tab-pane fade-in">
+      <div class="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+
+        <!-- Toolbar -->
+        <div class="p-6 border-b border-gray-50 flex flex-wrap items-center justify-between gap-3">
+          <h2 class="display text-xl font-black" style="color:var(--ink)">Reading Communities</h2>
+          <div class="flex items-center gap-3 flex-wrap">
+            <div class="relative">
+              <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+              <input id="circleSearch" oninput="filterCircles()" placeholder="Search communities…"
+                     class="search-input pl-8 pr-4 py-2 rounded-xl text-sm border border-gray-200 w-52 bg-gray-50">
+            </div>
+            <select id="circleFilter" onchange="filterCircles()" class="search-input text-sm border border-gray-200 rounded-xl px-3 py-2 bg-gray-50">
+              <option value="all">All Categories</option>
+              <option value="Tech">Tech</option>
+              <option value="Design">Design</option>
+              <option value="Computer Science">Computer Science</option>
+              <option value="Fiction">Fiction</option>
+            </select>
+            <button onclick="openCreateCircleModal()"
+                    class="pill-btn text-white px-4 py-2 text-xs flex items-center gap-1.5" style="background:var(--purple)">
+              <i class="fas fa-plus"></i> New Circle
+            </button>
+            <button onclick="openCreateSuperCommunityModal()"
+                    class="pill-btn text-white px-4 py-2 text-xs flex items-center gap-1.5" style="background:var(--amber)">
+              <i class="fas fa-star"></i> New Super Circle
+            </button>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left">
+            <thead>
+              <tr style="background:var(--surface)">
+                <th class="px-6 py-4 text-xs font-black uppercase tracking-widest" style="color:var(--muted)">Community</th>
+                <th class="px-6 py-4 text-xs font-black uppercase tracking-widest" style="color:var(--muted)">Category</th>
+                <th class="px-6 py-4 text-xs font-black uppercase tracking-widest" style="color:var(--muted)">Members</th>
+                <th class="px-6 py-4 text-xs font-black uppercase tracking-widest" style="color:var(--muted)">Posts</th>
+                <th class="px-6 py-4 text-xs font-black uppercase tracking-widest" style="color:var(--muted)">Created</th>
+                <th class="px-6 py-4 text-xs font-black uppercase tracking-widest" style="color:var(--muted)">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="circlesBody">
+              <% stats.recentCircles.forEach(circle => { %>
+              <tr class="data-row border-t border-gray-50"
+                  data-name="<%= circle.name.toLowerCase() %>"
+                  data-category="<%= circle.category %>">
+                
+                <!-- Name + description -->
+                <td class="px-6 py-4">
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl flex items-center justify-center text-white font-black text-sm flex-shrink-0 display"
+                         style="background: hsl(<%= Math.abs(circle.name.charCodeAt(0) * 97) % 360 %>, 55%, 48%)">
+                      <%= circle.name.charAt(0).toUpperCase() %>
+                    </div>
+                    <div>
+                      <p class="font-bold text-sm flex items-center gap-1.5" style="color:var(--ink)">
+                        <% if (circle.isSuper) { %><i class="fas fa-star text-amber-400 text-xs"></i><% } %>
+                        <%= circle.name %>
+                        <% if (circle.isSuper) { %>
+                          <span class="badge" style="background:var(--amber-light);color:var(--amber)">Super</span>
+                        <% } %>
+                      </p>
+                      <p class="text-xs line-clamp-1 max-w-xs" style="color:var(--muted)"><%= circle.description %></p>
+                    </div>
+                  </div>
+                </td>
+
+                <!-- Category -->
+                <td class="px-6 py-4">
+                  <span class="badge" style="background:var(--purple-light);color:var(--purple)"><%= circle.category %></span>
+                </td>
+
+                <!-- Member count -->
+                <td class="px-6 py-4">
+                  <span class="badge mono" style="background:var(--blue-light);color:var(--blue)">
+                    <i class="fas fa-users"></i> <%= circle.members ? circle.members.length : 0 %>
+                  </span>
+                </td>
+
+                <!-- Post count -->
+                <td class="px-6 py-4">
+                  <span class="badge mono" style="background:var(--green-light);color:var(--green)">
+                    <i class="fas fa-comments"></i> <%= circle.posts ? circle.posts.length : 0 %>
+                  </span>
+                </td>
+
+                <!-- Created date -->
+                <td class="px-6 py-4">
+                  <p class="text-xs" style="color:var(--muted)">
+                    <%= new Date(circle.createdAt).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) %>
+                  </p>
+                </td>
+
+                <!-- Actions -->
+                <td class="px-6 py-4">
+                  <div class="action-menu-wrap">
+                    <button class="action-menu-btn" onclick="toggleDropdown(this)">
+                      Actions <span class="chevron">▼</span>
+                    </button>
+                    <div class="action-dropdown">
+                      <a href="/communities/<%= circle._id %>">
+                        <i class="fas fa-eye" style="color:var(--blue);width:14px"></i> View
+                      </a>
+                      <button onclick="openEditCircleModal('<%= circle._id %>', '<%= circle.name.replace(/'/g, '') %>', '<%= circle.description.replace(/'/g, '') %>', '<%= circle.category %>'); closeAllDropdowns()">
+                        <i class="fas fa-pen" style="color:var(--amber);width:14px"></i> Edit
+                      </button>
+                      <div class="sep"></div>
+                      <button class="danger" onclick="confirmDeleteCircle('<%= circle._id %>', '<%= circle.name.replace(/'/g, '') %>'); closeAllDropdowns()">
+                        <i class="fas fa-trash" style="width:14px"></i> Delete
+                      </button>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              <% }) %>
+              <% if (!stats.recentCircles || stats.recentCircles.length === 0) { %>
+              <tr>
+                <td colspan="6" class="px-6 py-16 text-center text-sm font-bold" style="color:var(--muted)">
+                  No communities yet. Create the first one!
+                </td>
+              </tr>
+              <% } %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     MODAL: ADD BOOK
+══════════════════════════════════════════════════════════════════════════ -->
+<div id="addBookModal" class="modal-wrap fixed inset-0 z-[200] hidden items-center justify-center p-4 bg-gray-900/50" style="display:none">
+  <div class="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden" id="addBookContent">
+    <div style="background:var(--ink2)" class="px-8 py-6 flex justify-between items-center">
+      <div>
+        <h2 class="display text-white text-2xl font-black">New Vault Entry</h2>
+        <p style="color:#71717a" class="text-xs mt-1 font-medium tracking-wide">Add a book to the catalog</p>
+      </div>
+      <button onclick="closeModal('addBookModal')" class="w-8 h-8 rounded-lg bg-white/10 text-white hover:bg-white/20 flex items-center justify-center transition-all">
+        <i class="fas fa-times text-sm"></i>
+      </button>
+    </div>
+    <div class="p-8 max-h-[75vh] overflow-y-auto">
+      <form id="addBookForm" class="space-y-5">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-black uppercase tracking-wider mb-1.5" style="color:var(--muted)">Title *</label>
+            <input name="title" required placeholder="The Fullstack Architect"
+                   class="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-xs font-black uppercase tracking-wider mb-1.5" style="color:var(--muted)">Author *</label>
+            <input name="author" required placeholder="Jane Doe"
+                   class="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+        </div>
+        <div class="grid grid-cols-3 gap-4">
+          <div>
+            <label class="block text-xs font-black uppercase tracking-wider mb-1.5" style="color:var(--muted)">ISBN *</label>
+            <input name="isbn" required
+                   class="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-xs font-black uppercase tracking-wider mb-1.5" style="color:var(--muted)">Category *</label>
+            <select name="category" required class="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="Development">Development</option>
+              <option value="Design">Design</option>
+              <option value="Software Engineering">Software Engineering</option>
+              <option value="Business">Business</option>
+              <option value="Programming">Programming</option>
+              <option value="Self-Help">Self-Help</option>
+              <option value="Finance">Finance</option>
+              <option value="Productivity">Productivity</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-black uppercase tracking-wider mb-1.5" style="color:var(--muted)">Price ($)</label>
+            <input name="price" type="number" step="0.01" value="0" min="0"
+                   class="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-black uppercase tracking-wider mb-1.5" style="color:var(--muted)">Description</label>
+          <textarea name="description" rows="3"
+                    class="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"></textarea>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="border-2 border-dashed border-gray-200 rounded-2xl p-4 text-center hover:border-blue-300 transition-colors">
+            <i class="fas fa-image text-2xl mb-2" style="color:var(--muted)"></i>
+            <p class="text-xs font-bold mb-2" style="color:var(--muted)">Cover Image</p>
+            <input type="file" name="bookImage" accept="image/*" class="w-full text-xs">
+          </div>
+          <div class="border-2 border-dashed border-gray-200 rounded-2xl p-4 text-center hover:border-purple-300 transition-colors">
+            <i class="fas fa-file-pdf text-2xl mb-2" style="color:var(--purple)"></i>
+            <p class="text-xs font-bold mb-2" style="color:var(--muted)">PDF File</p>
+            <input type="file" name="bookPdf" accept=".pdf" class="w-full text-xs">
+          </div>
+        </div>
+        <div class="flex items-center justify-between p-4 rounded-2xl" style="background:var(--amber-light)">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl flex items-center justify-center text-white text-sm" style="background:var(--amber)">
+              <i class="fas fa-crown"></i>
+            </div>
+            <div>
+              <p class="text-sm font-bold" style="color:var(--ink)">Premium Asset</p>
+              <p class="text-xs" style="color:var(--muted)">Only premium members can download</p>
+            </div>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" name="isPremium" id="addIsPremium" class="sr-only peer">
+            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-amber-400 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+          </label>
+        </div>
+        <button type="submit" id="addBookSubmitBtn"
+                class="w-full py-4 rounded-2xl font-black text-white text-sm transition-all active:scale-98"
+                style="background:var(--ink2)">
+          Publish to Library Vault
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     MODAL: EDIT BOOK
+══════════════════════════════════════════════════════════════════════════ -->
+<div id="editBookModal" class="modal-wrap fixed inset-0 z-[200] hidden items-center justify-center p-4 bg-gray-900/50" style="display:none">
+  <div class="bg-white w-full max-w-xl rounded-3xl shadow-2xl overflow-hidden">
+    <div style="background:var(--blue)" class="px-8 py-6 flex justify-between items-center">
+      <div>
+        <h2 class="display text-white text-2xl font-black">Edit Book</h2>
+        <p style="color:rgba(255,255,255,.7)" class="text-xs mt-0.5" id="editBookSubtitle">Editing details</p>
+      </div>
+      <button onclick="closeModal('editBookModal')" class="w-8 h-8 rounded-lg bg-white/20 text-white hover:bg-white/30 flex items-center justify-center transition-all">
+        <i class="fas fa-times text-sm"></i>
+      </button>
+    </div>
+    <div class="p-8 max-h-[75vh] overflow-y-auto">
+      <form id="editBookForm" class="space-y-4">
+        <input type="hidden" id="editBookId">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-black uppercase tracking-wider mb-1.5" style="color:var(--muted)">Title</label>
+            <input id="editTitle" name="title" class="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-xs font-black uppercase tracking-wider mb-1.5" style="color:var(--muted)">Author</label>
+            <input id="editAuthor" name="author" class="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-black uppercase tracking-wider mb-1.5" style="color:var(--muted)">Price ($)</label>
+            <input id="editPrice" name="price" type="number" step="0.01" min="0"
+                   class="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-xs font-black uppercase tracking-wider mb-1.5" style="color:var(--muted)">Category</label>
+            <select id="editCategory" name="category" class="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="Development">Development</option>
+              <option value="Design">Design</option>
+              <option value="Software Engineering">Software Engineering</option>
+              <option value="Business">Business</option>
+              <option value="Programming">Programming</option>
+              <option value="Self-Help">Self-Help</option>
+              <option value="Finance">Finance</option>
+              <option value="Productivity">Productivity</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-black uppercase tracking-wider mb-1.5" style="color:var(--muted)">Description</label>
+          <textarea id="editDescription" rows="3"
+                    class="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"></textarea>
+        </div>
+        <div class="flex items-center justify-between p-4 rounded-2xl" style="background:var(--amber-light)">
+          <p class="text-sm font-bold" style="color:var(--ink)"><i class="fas fa-crown mr-2" style="color:var(--amber)"></i>Premium Asset</p>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="editIsPremium" class="sr-only peer">
+            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-amber-400 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+          </label>
+        </div>
+        <button type="submit" class="w-full py-4 rounded-2xl font-black text-white text-sm" style="background:var(--blue)">
+          Save Changes
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     MODAL: PDF MANAGER (view existing + delete + upload new)
+══════════════════════════════════════════════════════════════════════════ -->
+<div id="pdfManagerModal" class="modal-wrap fixed inset-0 z-[200] hidden items-center justify-center p-4 bg-gray-900/50" style="display:none">
+  <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden">
+    <div style="background:var(--purple)" class="px-8 py-6 flex justify-between items-center">
+      <div>
+        <h2 class="display text-white text-2xl font-black">PDF Manager</h2>
+        <p id="pdfManagerSubtitle" style="color:rgba(255,255,255,.7)" class="text-xs mt-0.5"></p>
+      </div>
+      <button onclick="closeModal('pdfManagerModal')" class="w-8 h-8 rounded-lg bg-white/20 text-white hover:bg-white/30 flex items-center justify-center">
+        <i class="fas fa-times text-sm"></i>
+      </button>
+    </div>
+    <div class="p-8 space-y-5">
+      <input type="hidden" id="pdfManagerBookId">
+
+      <!-- Existing PDF section -->
+      <div id="existingPdfSection">
+        <!-- filled by JS -->
+      </div>
+
+      <!-- Upload new PDF -->
+      <div>
+        <p class="text-xs font-black uppercase tracking-wider mb-3" style="color:var(--muted)">
+          <span id="pdfUploadLabel">Upload PDF</span>
+        </p>
+        <form id="uploadPdfForm" class="space-y-4">
+          <input type="hidden" id="uploadPdfBookId">
+          <div class="border-2 border-dashed border-purple-200 rounded-2xl p-6 text-center hover:border-purple-400 transition-colors">
+            <i class="fas fa-file-pdf text-3xl mb-2" style="color:var(--purple)"></i>
+            <p class="font-bold text-sm mb-1" style="color:var(--ink)">Select PDF File</p>
+            <p class="text-xs mb-3" style="color:var(--muted)">Only .pdf files accepted</p>
+            <input type="file" id="pdfFileInput" name="bookPdf" accept=".pdf" required class="w-full text-sm">
+          </div>
+          <button type="submit" class="w-full py-3.5 rounded-2xl font-black text-white text-sm" style="background:var(--purple)">
+            <i class="fas fa-upload mr-2"></i> Upload & Link PDF
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     MODAL: CREATE SUPER COMMUNITY (Admin only)
+══════════════════════════════════════════════════════════════════════════ -->
+<div id="superCommunityModal" class="modal-wrap fixed inset-0 z-[200] hidden items-center justify-center p-4 bg-gray-900/50" style="display:none">
+  <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden">
+    <div class="px-8 py-6 flex justify-between items-center" style="background:linear-gradient(135deg,#1c1c28,#1e1b4b)">
+      <div>
+        <div class="flex items-center gap-2 mb-1">
+          <i class="fas fa-star text-amber-400 text-sm"></i>
+          <h2 class="display text-white text-2xl font-black">Super Community</h2>
+        </div>
+        <p style="color:#94a3b8" class="text-xs">Premium members & Admin can post · All users can read</p>
+      </div>
+      <button onclick="closeModal('superCommunityModal')" class="w-8 h-8 rounded-lg bg-white/10 text-white hover:bg-white/20 flex items-center justify-center transition-all">
+        <i class="fas fa-times text-sm"></i>
+      </button>
+    </div>
+    <div class="p-8">
+      <div class="flex items-start gap-3 p-4 rounded-2xl mb-6" style="background:#fffbeb;border:1px solid #fde68a">
+        <i class="fas fa-crown text-amber-500 mt-0.5 flex-shrink-0"></i>
+        <p class="text-xs font-medium text-amber-800 leading-relaxed">
+          A Super Community is shown with a ⭐ star badge and is pinned at the top. Only <strong>Premium members</strong> and <strong>Admins</strong> can post or reply. All other users can read.
+        </p>
+      </div>
+      <form id="superCommunityForm" class="space-y-4">
+        <div>
+          <label class="block text-xs font-black uppercase tracking-wider mb-1.5" style="color:var(--muted)">Community Name *</label>
+          <input id="superName" required placeholder="e.g. BookVault Official"
+                 class="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+        </div>
+        <div>
+          <label class="block text-xs font-black uppercase tracking-wider mb-1.5" style="color:var(--muted)">Category *</label>
+          <select id="superCategory" class="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+            <option value="Tech">Tech</option>
+            <option value="Design">Design</option>
+            <option value="Computer Science">Computer Science</option>
+            <option value="Fiction">Fiction</option>
+            <option value="Announcements">Announcements</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-black uppercase tracking-wider mb-1.5" style="color:var(--muted)">Description *</label>
+          <textarea id="superDesc" rows="3" required placeholder="Official BookVault announcements — new books, updates, and vault news."
+                    class="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 resize-none"></textarea>
+        </div>
+        <button id="superCommunityBtn" type="submit"
+                class="w-full py-3.5 rounded-2xl font-black text-sm transition-all"
+                style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#1c1c28">
+          <i class="fas fa-star mr-2"></i> Create Super Community
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     MODAL: CREATE CIRCLE
+══════════════════════════════════════════════════════════════════════════ -->
+<div id="createCircleModal" class="modal-wrap fixed inset-0 z-[200] hidden items-center justify-center p-4 bg-gray-900/50" style="display:none">
+  <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden">
+    <div class="px-8 py-6 flex justify-between items-center" style="background:var(--purple)">
+      <div>
+        <h2 class="display text-white text-2xl font-black">New Reading Circle</h2>
+        <p style="color:rgba(255,255,255,.7)" class="text-xs mt-0.5">Create a community from admin panel</p>
+      </div>
+      <button onclick="closeModal('createCircleModal')" class="w-8 h-8 rounded-lg bg-white/20 text-white hover:bg-white/30 flex items-center justify-center transition-all">
+        <i class="fas fa-times text-sm"></i>
+      </button>
+    </div>
+    <div class="p-8">
+      <form id="createCircleForm" class="space-y-4">
+        <div>
+          <label class="block text-xs font-black uppercase tracking-wider mb-1.5" style="color:var(--muted)">Community Name *</label>
+          <input id="newCircleName" required placeholder="e.g. JavaScript Masters"
+                 class="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400">
+        </div>
+        <div>
+          <label class="block text-xs font-black uppercase tracking-wider mb-1.5" style="color:var(--muted)">Category *</label>
+          <select id="newCircleCategory" class="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400">
+            <option value="Tech">Tech</option>
+            <option value="Design">Design</option>
+            <option value="Computer Science">Computer Science</option>
+            <option value="Fiction">Fiction</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-black uppercase tracking-wider mb-1.5" style="color:var(--muted)">Description *</label>
+          <textarea id="newCircleDesc" rows="3" required placeholder="What is this circle about?"
+                    class="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 resize-none"></textarea>
+        </div>
+        <button id="createCircleBtn" type="submit"
+                class="w-full py-3.5 rounded-2xl font-black text-white text-sm transition-all active:scale-98" style="background:var(--purple)">
+          <i class="fas fa-plus-circle mr-2"></i> Create Community
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     MODAL: EDIT COMMUNITY
+══════════════════════════════════════════════════════════════════════════ -->
+<div id="editCircleModal" class="modal-wrap fixed inset-0 z-[200] hidden items-center justify-center p-4 bg-gray-900/50" style="display:none">
+  <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden">
+    <div class="px-8 py-6 flex justify-between items-center" style="background:var(--amber)">
+      <div>
+        <h2 class="display text-white text-2xl font-black">Edit Community</h2>
+        <p style="color:rgba(255,255,255,.7)" class="text-xs mt-0.5">Update circle details</p>
+      </div>
+      <button onclick="closeModal('editCircleModal')" class="w-8 h-8 rounded-lg bg-white/20 text-white hover:bg-white/30 flex items-center justify-center transition-all">
+        <i class="fas fa-times text-sm"></i>
+      </button>
+    </div>
+    <div class="p-8">
+      <form id="editCircleForm" class="space-y-4">
+        <input type="hidden" id="editCircleId">
+        <div>
+          <label class="block text-xs font-black uppercase tracking-wider mb-1.5" style="color:var(--muted)">Community Name</label>
+          <input id="editCircleName"
+                 class="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+        </div>
+        <div>
+          <label class="block text-xs font-black uppercase tracking-wider mb-1.5" style="color:var(--muted)">Category</label>
+          <select id="editCircleCategory" class="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400">
+            <option value="Tech">Tech</option>
+            <option value="Design">Design</option>
+            <option value="Computer Science">Computer Science</option>
+            <option value="Fiction">Fiction</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-black uppercase tracking-wider mb-1.5" style="color:var(--muted)">Description</label>
+          <textarea id="editCircleDesc" rows="3"
+                    class="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 resize-none"></textarea>
+        </div>
+        <button type="submit"
+                class="w-full py-3.5 rounded-2xl font-black text-white text-sm" style="background:var(--amber)">
+          Save Changes
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  const Toast = Swal.mixin({ toast:true, position:'top-end', showConfirmButton:false, timer:3500, timerProgressBar:true });
+
+  // ── TAB SWITCHING ──────────────────────────────────────────────────────────
+  function switchTab(name) {
+    ['books','users','circles'].forEach(t => {
+      document.getElementById(`tab-${t}`).classList.toggle('active', t === name);
+      document.getElementById(`tab-${t}`).style.color = t === name ? '' : 'var(--muted)';
+      document.getElementById(`pane-${t}`).classList.toggle('active', t === name);
+    });
+  }
+
+  // ── MODAL HELPERS ──────────────────────────────────────────────────────────
+  function openModal(id) {
+    const el = document.getElementById(id);
+    el.style.display = 'flex';
+    el.classList.remove('hidden');
+  }
+  function closeModal(id) {
+    const el = document.getElementById(id);
+    el.style.display = 'none';
+    el.classList.add('hidden');
+  }
+  ['addBookModal','editBookModal','pdfManagerModal','createCircleModal','editCircleModal','superCommunityModal'].forEach(id => {
+    document.getElementById(id).addEventListener('click', function(e) {
+      if (e.target === this) closeModal(id);
+    });
+  });
+
+  // ── DROPDOWN HELPERS ──────────────────────────────────────────────────────
+  function closeAllDropdowns() {
+    document.querySelectorAll('.action-dropdown.open').forEach(d => d.classList.remove('open'));
+    document.querySelectorAll('.action-menu-btn.open').forEach(b => b.classList.remove('open'));
+  }
+  function toggleDropdown(btn) {
+    const drop = btn.nextElementSibling;
+    const isOpen = drop.classList.contains('open');
+    closeAllDropdowns();
+    if (!isOpen) {
+      drop.classList.add('open');
+      btn.classList.add('open');
+    }
+  }
+  // Close dropdowns on outside click
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('.action-menu-wrap')) closeAllDropdowns();
+  });
+
+  // ── ADD BOOK MODAL ─────────────────────────────────────────────────────────
+  function openAddBookModal() { openModal('addBookModal'); }
+
+  document.getElementById('addBookForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('addBookSubmitBtn');
+    btn.disabled = true; btn.textContent = 'Publishing...';
+    const fd = new FormData(e.target);
+    fd.set('isPremium', document.getElementById('addIsPremium').checked ? 'true' : 'false');
+    fd.set('isActive', 'true');
+    try {
+      const res  = await fetch('/books/add', { method:'POST', body: fd, credentials:'include' });
+      const data = await res.json();
+      if (data.success) {
+        Swal.fire({ icon:'success', title:'Published!', text:'Book added to vault.' })
+          .then(() => location.reload());
+      } else {
+        Swal.fire({ icon:'error', title:'Error', text: data.message });
+        btn.disabled = false; btn.textContent = 'Publish to Library Vault';
+      }
+    } catch (err) {
+      btn.disabled = false; btn.textContent = 'Publish to Library Vault';
+      Toast.fire({ icon:'error', title:'Network error — check your connection' });
+    }
+  });
+
+  // ── EDIT BOOK MODAL ────────────────────────────────────────────────────────
+  function openEditBookModal(book) {
+    document.getElementById('editBookId').value        = book._id;
+    document.getElementById('editBookSubtitle').textContent = book.title;
+    document.getElementById('editTitle').value         = book.title;
+    document.getElementById('editAuthor').value        = book.author;
+    document.getElementById('editPrice').value         = book.price;
+    document.getElementById('editDescription').value   = book.description || '';
+    document.getElementById('editIsPremium').checked   = book.isPremium;
+    const sel = document.getElementById('editCategory');
+    [...sel.options].forEach(o => o.selected = o.value === book.category);
+    openModal('editBookModal');
+  }
+
+  document.getElementById('editBookForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = document.getElementById('editBookId').value;
+    const payload = {
+      title:       document.getElementById('editTitle').value,
+      author:      document.getElementById('editAuthor').value,
+      price:       parseFloat(document.getElementById('editPrice').value) || 0,
+      category:    document.getElementById('editCategory').value,
+      description: document.getElementById('editDescription').value,
+      isPremium:   document.getElementById('editIsPremium').checked
+    };
+    try {
+      const res  = await fetch(`/admin/books/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type':'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.success) {
+        closeModal('editBookModal');
+        Toast.fire({ icon:'success', title:'Book updated!' });
+        setTimeout(() => location.reload(), 800);
+      } else {
+        Toast.fire({ icon:'error', title: data.message || 'Update failed' });
+      }
+    } catch(err) {
+      Toast.fire({ icon:'error', title:'Network error — check your connection' });
+    }
+  });
+
+  // ── PDF MANAGER MODAL ─────────────────────────────────────────────────────
+  function openPdfManager(bookId, title, existingPdfPath) {
+    document.getElementById('pdfManagerBookId').value      = bookId;
+    document.getElementById('uploadPdfBookId').value       = bookId;
+    document.getElementById('pdfManagerSubtitle').textContent = title;
+    document.getElementById('pdfFileInput').value          = '';
+
+    const section = document.getElementById('existingPdfSection');
+    const uploadLabel = document.getElementById('pdfUploadLabel');
+
+    if (existingPdfPath && existingPdfPath.trim() !== '') {
+      // Show existing PDF with delete option
+      const filename = existingPdfPath.split('/').pop() || 'book.pdf';
+      section.innerHTML = `
+        <div>
+          <p class="text-xs font-black uppercase tracking-wider mb-3" style="color:var(--muted)">Current PDF</p>
+          <div class="flex items-center justify-between p-4 rounded-2xl" style="background:var(--purple-light);border:1px solid #ddd6fe">
+            <div class="flex items-center gap-3">
+              <i class="fas fa-file-pdf text-xl" style="color:var(--purple)"></i>
+              <div>
+                <p class="font-bold text-sm" style="color:var(--ink)">${filename}</p>
+                <a href="${existingPdfPath}" target="_blank" class="text-xs font-semibold" style="color:var(--purple)">
+                  <i class="fas fa-external-link-alt mr-1"></i>Preview
+                </a>
+              </div>
+            </div>
+            <button onclick="deletePdf('${bookId}')" type="button"
+                    class="pill-btn text-white text-xs px-3 py-1.5 flex items-center gap-1.5" style="background:var(--red)">
+              <i class="fas fa-trash"></i> Delete
+            </button>
+          </div>
+        </div>
+      `;
+      uploadLabel.textContent = 'Replace with New PDF';
+      // remove required so they can just delete without uploading
+      document.getElementById('pdfFileInput').removeAttribute('required');
+    } else {
+      section.innerHTML = `
+        <div class="flex items-center gap-2 p-3 rounded-xl mb-1" style="background:var(--red-light)">
+          <i class="fas fa-exclamation-circle" style="color:var(--red)"></i>
+          <p class="text-xs font-bold" style="color:var(--red)">No PDF linked to this book</p>
+        </div>
+      `;
+      uploadLabel.textContent = 'Upload PDF';
+      document.getElementById('pdfFileInput').setAttribute('required', '');
+    }
+
+    openModal('pdfManagerModal');
+  }
+
+  async function deletePdf(bookId) {
+    const result = await Swal.fire({
+      title: 'Delete PDF?',
+      text: 'This will remove the linked PDF file.',
+      icon: 'warning', showCancelButton: true,
+      confirmButtonText: 'Delete', confirmButtonColor: '#dc2626'
+    });
+    if (result.isConfirmed) {
+      try {
+        const res  = await fetch(`/admin/books/${bookId}/delete-pdf`, { method:'DELETE', credentials:'include' });
+        const data = await res.json();
+        if (data.success) {
+          closeModal('pdfManagerModal');
+          Toast.fire({ icon:'success', title:'PDF removed' });
+          setTimeout(() => location.reload(), 800);
+        } else {
+          Toast.fire({ icon:'error', title: data.message || 'Delete failed' });
+        }
+      } catch(err) {
+        Toast.fire({ icon:'error', title:'Network error — check your connection' });
+      }
+    }
+  }
+
+  document.getElementById('uploadPdfForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id   = document.getElementById('uploadPdfBookId').value;
+    const file = document.getElementById('pdfFileInput').files[0];
+    if (!file) { Toast.fire({ icon:'warning', title:'Please select a PDF file' }); return; }
+    const fd = new FormData();
+    fd.append('bookPdf', file);
+    try {
+      const res  = await fetch(`/admin/books/${id}/upload-pdf`, { method:'POST', body:fd, credentials:'include' });
+      const data = await res.json();
+      if (data.success) {
+        closeModal('pdfManagerModal');
+        Toast.fire({ icon:'success', title:'PDF linked successfully!' });
+        setTimeout(() => location.reload(), 800);
+      } else {
+        Toast.fire({ icon:'error', title: data.message || 'Upload failed' });
+      }
+    } catch(err) {
+      Toast.fire({ icon:'error', title:'Network error — check your connection' });
+    }
+  });
+
+  // ── INLINE PRICE UPDATE ────────────────────────────────────────────────────
+  async function updatePrice(bookId, value) {
+    const price = parseFloat(value);
+    if (isNaN(price) || price < 0) return;
+    try {
+      const res  = await fetch(`/admin/books/${bookId}`, {
+        method:'PATCH', headers:{'Content-Type':'application/json'},
+        credentials:'include', body: JSON.stringify({ price })
+      });
+      const data = await res.json();
+      if (data.success) Toast.fire({ icon:'success', title:'Price updated' });
+    } catch(e) { Toast.fire({ icon:'error', title:'Failed to update price' }); }
+  }
+
+  // ── INLINE RATING UPDATE ───────────────────────────────────────────────────
+  async function updateRating(bookId, value) {
+    const rating = parseFloat(value);
+    if (isNaN(rating) || rating < 1 || rating > 5) return;
+    try {
+      const res  = await fetch(`/admin/books/${bookId}`, {
+        method:'PATCH', headers:{'Content-Type':'application/json'},
+        credentials:'include', body: JSON.stringify({ averageRating: rating })
+      });
+      const data = await res.json();
+      if (data.success) Toast.fire({ icon:'success', title:'Rating updated' });
+    } catch(e) { Toast.fire({ icon:'error', title:'Failed to update rating' }); }
+  }
+
+  // ── TOGGLE BOOK PREMIUM ────────────────────────────────────────────────────
+  async function toggleBookPremium(bookId, track) {
+    const isOn = track.classList.contains('on');
+    try {
+      const res  = await fetch(`/books/${bookId}/premium`, {
+        method:'PATCH', headers:{'Content-Type':'application/json'},
+        credentials:'include', body: JSON.stringify({ isPremium: !isOn })
+      });
+      const data = await res.json();
+      if (data.success) {
+        track.classList.toggle('on', !isOn);
+        track.classList.toggle('off', isOn);
+        Toast.fire({ icon:'success', title: !isOn ? 'Marked Premium' : 'Marked Free' });
+      }
+    } catch(e) { Toast.fire({ icon:'error', title:'Toggle failed' }); }
+  }
+
+  // ── TOGGLE BOOK STATUS (Archive) ───────────────────────────────────────────
+  async function toggleBookStatus(bookId, btn) {
+    const isActive = btn.classList.contains('active-state');
+    try {
+      const res  = await fetch(`/books/${bookId}/status`, {
+        method:'PATCH', headers:{'Content-Type':'application/json'},
+        credentials:'include', body: JSON.stringify({ isActive: !isActive })
+      });
+      const data = await res.json();
+      if (data.success) {
+        btn.classList.toggle('active-state', !isActive);
+        btn.classList.toggle('archived-state', isActive);
+        btn.innerHTML = !isActive
+          ? '<i class="fas fa-check-circle" style="font-size:9px"></i> Active'
+          : '<i class="fas fa-archive" style="font-size:9px"></i> Archived';
+        Toast.fire({ icon:'success', title: !isActive ? 'Book activated' : 'Book archived' });
+      }
+    } catch(e) { Toast.fire({ icon:'error', title:'Toggle failed' }); }
+  }
+
+  // ── TOGGLE USER PREMIUM ────────────────────────────────────────────────────
+  // async function toggleUserPremium(userId, track) {
+  //   const isOn = track.classList.contains('on');
+  //   try {
+  //     const res  = await fetch(`/admin/toggle-premium/${userId}`, { method:'POST', credentials:'include' });
+  //     const data = await res.json();
+  //     if (data.success) {
+  //       track.classList.toggle('on', !isOn);
+  //       track.classList.toggle('off', isOn);
+  //       Toast.fire({ icon:'success', title: data.isPremium ? 'Upgraded to Premium' : 'Reverted to Free' });
+  //     }
+  //   } catch(e) { Toast.fire({ icon:'error', title:'Toggle failed' }); }
+  // }
+
+  // ── DELETE BOOK ────────────────────────────────────────────────────────────
+  async function confirmDeleteBook(bookId, title) {
+    const result = await Swal.fire({
+      title: `Archive "${title}"?`,
+      text: 'This will deactivate the book from the catalog.',
+      icon: 'warning', showCancelButton:true,
+      confirmButtonText:'Archive', confirmButtonColor: '#dc2626'
+    });
+    if (result.isConfirmed) {
+      try {
+        const res  = await fetch(`/books/deactivate/${bookId}`, { method:'PATCH', credentials:'include' });
+        const data = await res.json();
+        if (data.success) { Toast.fire({ icon:'success', title:'Book archived' }); setTimeout(()=>location.reload(),800); }
+      } catch(e) { Toast.fire({ icon:'error', title:'Network error' }); }
+    }
+  }
+
+  // ── DELETE USER ────────────────────────────────────────────────────────────
+  async function confirmDeleteUser(userId, username) {
+    const result = await Swal.fire({
+      title: `Ban "${username}"?`,
+      text: 'This will remove their account.',
+      icon: 'warning', showCancelButton:true,
+      confirmButtonText:'Confirm Ban', confirmButtonColor: '#dc2626'
+    });
+    if (result.isConfirmed) {
+      try {
+        const res  = await fetch(`/admin/users/${userId}`, { method:'DELETE', credentials:'include' });
+        const data = await res.json();
+        if (data.success) { Toast.fire({ icon:'success', title:'User removed' }); setTimeout(()=>location.reload(),800); }
+      } catch(e) { Toast.fire({ icon:'error', title:'Network error' }); }
+    }
+  }
+
+  // ── DELETE CIRCLE ──────────────────────────────────────────────────────────
+  async function confirmDeleteCircle(id, name) {
+    const result = await Swal.fire({
+      title: `Terminate "${name}"?`,
+      text: 'All posts inside will be permanently deleted.',
+      icon:'warning', showCancelButton:true,
+      confirmButtonText:'Terminate', confirmButtonColor:'#dc2626'
+    });
+    if (result.isConfirmed) {
+      try {
+        const res  = await fetch(`/admin/communities/${id}`, { method:'DELETE', credentials:'include' });
+        const data = await res.json();
+        if (data.success) {
+          Toast.fire({ icon:'success', title:'Community removed' });
+          setTimeout(() => location.reload(), 800);
+        } else {
+          Toast.fire({ icon:'error', title: data.message || 'Delete failed' });
+        }
+      } catch(e) { Toast.fire({ icon:'error', title:'Network error' }); }
+    }
+  }
+
+  // ── CREATE CIRCLE MODAL ────────────────────────────────────────────────────
+  function openCreateCircleModal() { openModal('createCircleModal'); }
+
+  document.getElementById('createCircleForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('createCircleBtn');
+    btn.disabled = true; btn.textContent = 'Creating...';
+    const payload = {
+      name:        document.getElementById('newCircleName').value.trim(),
+      category:    document.getElementById('newCircleCategory').value,
+      description: document.getElementById('newCircleDesc').value.trim()
+    };
+    try {
+      const res  = await fetch('/communities/create', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        credentials:'include', body: JSON.stringify(payload)
+      });
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`Server responded ${res.status}: ${errText}`);
+      }
+      const data = await res.json();
+      if (data.success) {
+        closeModal('createCircleModal');
+        Toast.fire({ icon:'success', title:'Community created!' });
+        setTimeout(() => location.reload(), 800);
+      } else {
+        Toast.fire({ icon:'error', title: data.message || 'Creation failed' });
+        btn.disabled = false; btn.textContent = 'Create Community';
+      }
+    } catch(err) {
+      console.error('createCircle error:', err);
+      btn.disabled = false; btn.textContent = 'Create Community';
+      Toast.fire({ icon:'error', title: err.message || 'Network error — check server logs' });
+    }
+  });
+
+  // ── EDIT CIRCLE MODAL ──────────────────────────────────────────────────────
+  function openEditCircleModal(id, name, desc, category) {
+    document.getElementById('editCircleId').value          = id;
+    document.getElementById('editCircleName').value        = name;
+    document.getElementById('editCircleDesc').value        = desc;
+    const sel = document.getElementById('editCircleCategory');
+    [...sel.options].forEach(o => o.selected = o.value === category);
+    openModal('editCircleModal');
+  }
+
+  document.getElementById('editCircleForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = document.getElementById('editCircleId').value;
+    const payload = {
+      name:        document.getElementById('editCircleName').value.trim(),
+      category:    document.getElementById('editCircleCategory').value,
+      description: document.getElementById('editCircleDesc').value.trim()
+    };
+    try {
+      const res  = await fetch(`/admin/communities/${id}`, {
+        method:'PATCH', headers:{'Content-Type':'application/json'},
+        credentials:'include', body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.success) {
+        closeModal('editCircleModal');
+        Toast.fire({ icon:'success', title:'Community updated!' });
+        setTimeout(() => location.reload(), 800);
+      } else {
+        Toast.fire({ icon:'error', title: data.message || 'Update failed' });
+      }
+    } catch(err) {
+      Toast.fire({ icon:'error', title:'Network error — check your connection' });
+    }
+  });
+
+  // ── SUPER COMMUNITY MODAL ─────────────────────────────────────────────────
+  function openCreateSuperCommunityModal() { openModal('superCommunityModal'); }
+
+  document.getElementById('superCommunityForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('superCommunityBtn');
+    btn.disabled = true; btn.textContent = 'Creating...';
+    const payload = {
+      name:        document.getElementById('superName').value.trim(),
+      category:    document.getElementById('superCategory').value,
+      description: document.getElementById('superDesc').value.trim()
+    };
+    try {
+      const res  = await fetch('/admin/communities/create-super', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        credentials:'include', body: JSON.stringify(payload)
+      });
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`Server responded ${res.status}: ${errText.slice(0,120)}`);
+      }
+      const data = await res.json();
+      if (data.success) {
+        closeModal('superCommunityModal');
+        Toast.fire({ icon:'success', title:'⭐ Super Community created!' });
+        setTimeout(() => location.reload(), 800);
+      } else {
+        Toast.fire({ icon:'error', title: data.message || 'Creation failed' });
+        btn.disabled = false; btn.innerHTML = '<i class="fas fa-star mr-2"></i> Create Super Community';
+      }
+    } catch(err) {
+      console.error('superCommunity error:', err);
+      Toast.fire({ icon:'error', title: err.message || 'Network error — check server logs' });
+      btn.disabled = false; btn.innerHTML = '<i class="fas fa-star mr-2"></i> Create Super Community';
+    }
+  });
+
+  // ── FILTER CIRCLES ─────────────────────────────────────────────────────────
+  function filterCircles() {
+    const q   = document.getElementById('circleSearch').value.toLowerCase();
+    const cat = document.getElementById('circleFilter').value;
+    document.querySelectorAll('#circlesBody tr[data-name]').forEach(row => {
+      const matchQ   = !q  || row.dataset.name.includes(q);
+      const matchCat = cat === 'all' || row.dataset.category === cat;
+      row.style.display = (matchQ && matchCat) ? '' : 'none';
+    });
+  }
+
+  // ── VIEW USER LIBRARY ──────────────────────────────────────────────────────
+  function viewUserLibrary(userId, username) {
+    window.location.href = `/admin/users/${userId}/library`;
+  }
+
+  
+  // ── SEARCH / FILTER BOOKS ──────────────────────────────────────────────────
+  function filterBooks() {
+    const q      = document.getElementById('bookSearch').value.toLowerCase();
+    const filter = document.getElementById('bookFilter').value;
+    document.querySelectorAll('#booksBody tr').forEach(row => {
+      const matchSearch = !q || row.dataset.title.includes(q) || row.dataset.author.includes(q);
+      const matchFilter = filter === 'all'
+        || (filter === 'premium'  && row.dataset.premium  === 'true')
+        || (filter === 'free'     && row.dataset.premium  === 'false')
+        || (filter === 'inactive' && row.dataset.active   === 'false');
+      row.style.display = (matchSearch && matchFilter) ? '' : 'none';
+    });
+  }
+
+  // ── SEARCH USERS ───────────────────────────────────────────────────────────
+  function filterUsers() {
+    const q = document.getElementById('userSearch').value.toLowerCase();
+    document.querySelectorAll('#usersBody tr').forEach(row => {
+      const match = !q || row.dataset.name.includes(q) || row.dataset.email.includes(q);
+      row.style.display = match ? '' : 'none';
+    });
+  }
+</script>

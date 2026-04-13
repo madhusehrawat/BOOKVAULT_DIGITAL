@@ -1,0 +1,249 @@
+<% if (books && books.length > 0) { %>
+    <% books.forEach(book => { %>
+        <div id="book-card-<%= book._id %>" 
+             class="group relative bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-500 overflow-hidden flex flex-col h-full animate-fade-in" 
+             onclick="openModal(<%= JSON.stringify(book) %>)">
+            
+            <div class="relative aspect-[3/4] overflow-hidden bg-gray-100">
+                <img src="<%= book.image %>" 
+                     alt="<%= book.title %>" 
+                     class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110">
+                
+                <div class="absolute top-4 right-4 flex flex-col gap-2 translate-x-12 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300">
+                    <button id="like-btn-<%= book._id %>" 
+                            onclick="toggleLike(event, '<%= book._id %>')"
+                            class="w-10 h-10 rounded-xl bg-white/90 backdrop-blur-md flex items-center justify-center text-gray-400 hover:text-red-500 hover:scale-110 shadow-lg transition-all duration-300">
+                        <i class="<%= (locals.user && user.library && user.library.some(id => id.toString() === book._id.toString())) ? 'fas text-red-500' : 'far' %> fa-heart text-lg"></i>
+                    </button>
+
+                    <button onclick="shareBook(event, '<%= book.title %>', '<%= book._id %>')"
+                            class="w-10 h-10 rounded-xl bg-white/90 backdrop-blur-md flex items-center justify-center text-gray-400 hover:text-blue-500 hover:scale-110 shadow-lg transition-all">
+                        <i class="fas fa-share-nodes text-lg"></i>
+                    </button>
+                </div>
+
+                <div class="absolute bottom-4 left-4 flex flex-col gap-2">
+                    <% if (book.isPremium) { %>
+                        <span class="px-3 py-1 bg-amber-500/90 backdrop-blur-md text-white text-[9px] font-black uppercase tracking-tighter rounded-lg shadow-lg flex items-center gap-1 w-fit">
+                            <i class="fas fa-crown"></i> Premium
+                        </span>
+                    <% } %>
+                    <span class="px-3 py-1.5 bg-blue-600/90 backdrop-blur-md text-white text-[10px] font-black uppercase tracking-widest rounded-lg shadow-lg w-fit">
+                        <%= book.category %>
+                    </span>
+                </div>
+            </div>
+
+            <div class="p-6 flex flex-col flex-grow">
+                <div class="mb-4">
+                    <h3 class="text-xl font-black text-gray-900 leading-tight group-hover:text-blue-600 transition-colors line-clamp-2">
+                        <%= book.title %>
+                    </h3>
+                    <p class="text-gray-500 text-sm font-medium mt-1">by <%= book.author %></p>
+                </div>
+
+                <!-- Rating + Price row -->
+                <div class="flex items-center justify-between pt-3 border-t border-gray-50 mb-3">
+                    <div class="flex items-center gap-1">
+                        <span class="text-yellow-400"><i class="fas fa-star text-xs"></i></span>
+                        <span class="text-gray-900 text-xs font-black"><%= book.averageRating ? book.averageRating.toFixed(1) : '5.0' %></span>
+                    </div>
+                    <% if (book.price && book.price > 0) { %>
+                        <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg">
+                            Worth $<%= book.price.toFixed(2) %>
+                        </span>
+                    <% } else { %>
+                        <span class="text-xs font-bold text-blue-500 bg-blue-50 px-2.5 py-1 rounded-lg">Free</span>
+                    <% } %>
+                </div>
+
+                <!-- Download button row -->
+                <div class="mt-auto">
+                    <button onclick="handleDownload(event, '<%= book._id %>', <%= book.isPremium ? 'true' : 'false' %>)"
+                            class="w-full flex items-center justify-center gap-2 px-5 py-2.5 <%= (book.isPremium && !(locals.user && user.isPremium)) ? 'bg-gray-800 hover:bg-amber-500' : 'bg-blue-600 hover:bg-blue-700' %> text-white rounded-xl text-xs font-black active:scale-95 transition-all shadow-sm">
+                        <% if (book.isPremium && !(locals.user && user.isPremium)) { %>
+                            <i class="fas fa-lock text-xs"></i>
+                            <span>Unlock</span>
+                        <% } else { %>
+                            <i class="fas fa-download text-xs"></i>
+                            <span>Download</span>
+                        <% } %>
+                    </button>
+                </div>
+            </div>
+        </div>
+    <% }) %>
+<% } else { %>
+    <div class="col-span-full py-20 text-center">
+        <p class="text-gray-400 italic">No assets matching your filters were found.</p>
+    </div>
+<% } %>
+
+<script>
+    /**
+     * handleDownload
+     *
+     * ROOT CAUSE OF "PDF not found" error:
+     *   The old code did TWO requests:
+     *     1. fetch('/books/:id/download')  — carried cookies, got 200 OK
+     *     2. window.location.href = '...'  — browser navigation, NO cookie sent
+     *                                        → requireAuth redirected to /login
+     *                                        → browser followed redirect silently
+     *
+     * FIX: Do ONE fetch with credentials:'include' to validate access.
+     *      On success, create a temporary <a download> and programmatically click it.
+     *      The browser fires a GET with the session cookie → file downloads correctly.
+     */
+    async function handleDownload(event, bookId, bookIsPremium) {
+        if (event) event.stopPropagation();
+
+        const userLoggedIn  = <%= locals.user ? 'true' : 'false' %>;
+        const userIsPremium = <%= (locals.user && user.isPremium) ? 'true' : 'false' %>;
+
+        // 1. Not logged in
+        if (!userLoggedIn) {
+            return Swal.fire({
+                title: 'Vault Locked',
+                text: 'Please log in to access this asset.',
+                icon: 'warning',
+                confirmButtonText: 'Go to Login',
+                confirmButtonColor: '#2563eb'
+            }).then(r => { if (r.isConfirmed) window.location.href = '/login'; });
+        }
+
+        // 2. Book is premium but user is not — block immediately, no network call needed
+        if (bookIsPremium && !userIsPremium) {
+            return Swal.fire({
+                title: '👑 Premium Content',
+                html: '<p style="color:#64748b">This book requires a Premium membership to download.<br><br>Unlock all premium books, unlimited PDF downloads & more.</p>',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'See Plans',
+                cancelButtonText: 'Maybe Later',
+                confirmButtonColor: '#f59e0b'
+            }).then(r => {
+                if (r.isConfirmed) window.location.href = '/premium';
+            });
+        }
+
+        // 3. User is allowed — single fetch with credentials to validate + get the file
+        if (typeof showToast === 'function') showToast("Preparing your download...", "info");
+
+        try {
+            const response = await fetch(`/books/${bookId}/download`, {
+                method: 'GET',
+                credentials: 'include'   // sends the session cookie — critical!
+            });
+
+            if (response.ok) {
+                // Server sent the file — convert the response body to a Blob
+                // and trigger a browser download without a second network request.
+                const blob = await response.blob();
+                const contentDisposition = response.headers.get('Content-Disposition') || '';
+                const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
+                const filename = filenameMatch ? filenameMatch[1] : 'book.pdf';
+
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                if (typeof showToast === 'function') showToast("Download started!", "success");
+
+            } else {
+                // Try to parse the JSON error from the server
+                const data = await response.json().catch(() => ({}));
+
+                if (response.status === 403 || data.isPremiumRequired) {
+                    Swal.fire({
+                        title: 'Premium Required',
+                        text: data.message || 'Upgrade to download this book.',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Upgrade Now',
+                        confirmButtonColor: '#f59e0b'
+                    }).then(r => {
+                        if (r.isConfirmed && typeof handlePremiumUpgrade === 'function') handlePremiumUpgrade();
+                    });
+                } else if (response.status === 401) {
+                    Swal.fire({
+                        title: 'Session Expired',
+                        text: 'Please log in again to continue.',
+                        icon: 'warning',
+                        confirmButtonText: 'Login',
+                        confirmButtonColor: '#2563eb'
+                    }).then(r => { if (r.isConfirmed) window.location.href = '/login'; });
+                } else {
+                    if (typeof showToast === 'function') {
+                        showToast(data.message || "Could not retrieve the file.", "error");
+                    }
+                }
+            }
+        } catch (err) {
+            console.error("Download Error:", err);
+            if (typeof showToast === 'function') showToast("Connection error. Please try again.", "error");
+        }
+    }
+
+    /** Share using Web Share API */
+    async function shareBook(event, title, bookId) {
+        event.stopPropagation();
+        const url = `${window.location.origin}/books/${bookId}`;
+        if (navigator.share) {
+            try { await navigator.share({ title, url }); } catch (e) { /* cancelled */ }
+        } else {
+            navigator.clipboard.writeText(url);
+            if (typeof showToast === 'function') showToast("Link copied!", "info");
+        }
+    }
+
+    /** Library heart toggle */
+    async function toggleLike(event, bookId) {
+        event.stopPropagation();
+        const btn = document.getElementById(`like-btn-${bookId}`);
+        const icon = btn.querySelector('i');
+
+        try {
+            const res = await fetch(`/books/${bookId}/toggle-library`, {
+                method: 'POST',
+                credentials: 'include'
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                if (typeof Toastify !== 'undefined') {
+                    Toastify({
+                        text: data.added ? "Added to Library" : "Removed from Library",
+                        duration: 3000,
+                        gravity: "bottom",
+                        position: "right",
+                        style: { background: data.added ? "#2563eb" : "#1e293b" }
+                    }).showToast();
+                }
+                if (data.added) {
+                    icon.classList.replace('far', 'fas');
+                    icon.classList.add('text-red-500');
+                } else {
+                    icon.classList.replace('fas', 'far');
+                    icon.classList.remove('text-red-500');
+                    if (window.location.pathname.includes('my-library')) {
+                        const card = document.getElementById(`book-card-${bookId}`);
+                        if (card) {
+                            card.classList.add('opacity-0', 'scale-95');
+                            setTimeout(() => {
+                                card.remove();
+                                if (typeof updateLibraryUI === 'function') updateLibraryUI();
+                            }, 300);
+                        }
+                    }
+                }
+            }
+        } catch (err) {
+            console.error("Library sync error:", err);
+        }
+    }
+</script>

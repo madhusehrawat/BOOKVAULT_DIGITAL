@@ -1,0 +1,90 @@
+<%- include('../partials/header') %>
+
+<main class="min-h-screen bg-slate-50 pt-24 pb-20">
+    <div class="max-w-7xl mx-auto px-6">
+        
+        <div class="mb-16 text-center">
+            <h1 class="text-5xl font-black text-slate-900 tracking-tight mb-4">Community Circles</h1>
+            <p class="text-slate-500 max-w-2xl mx-auto text-lg leading-relaxed">
+                Connect with fellow readers, join deep-dive discussions, and share your library journey in specialized interest groups.
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <% communities.forEach(circle => { %>
+                <div class="group relative bg-white rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-2xl hover:shadow-blue-200/40 transition-all duration-500 overflow-hidden flex flex-col h-full">
+                    
+                    <div class="h-32 bg-gradient-to-br from-blue-600 to-indigo-700 p-8 flex items-end">
+                        <div class="w-16 h-16 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center text-white text-3xl">
+                            <i class="fas fa-users-viewfinder"></i>
+                        </div>
+                    </div>
+
+                    <div class="p-8 flex-1 flex flex-col">
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="px-4 py-1.5 bg-blue-50 text-blue-600 text-[10px] font-black uppercase tracking-widest rounded-full">
+                                <%= circle.members.length %> Members
+                            </span>
+                        </div>
+
+                        <h3 class="text-2xl font-black text-slate-900 mb-3 group-hover:text-blue-600 transition-colors">
+                            <%= circle.name %>
+                        </h3>
+                        <p class="text-slate-500 text-sm leading-relaxed mb-8 flex-1">
+                            <%= circle.description %>
+                        </p>
+
+                        <div class="mt-auto pt-6 border-t border-slate-50">
+                            <% const isMember = user && circle.members.includes(user._id); %>
+                            
+                            <% if (isMember) { %>
+                                <a href="/communities/<%= circle._id %>" 
+                                   class="block w-full text-center py-4 bg-slate-900 text-white font-black rounded-2xl hover:bg-blue-600 transition-all active:scale-95 shadow-lg shadow-slate-200">
+                                    Open Discussion
+                                </a>
+                            <% } else { %>
+                                <button onclick="joinCircle('<%= circle._id %>')" 
+                                        id="btn-<%= circle._id %>"
+                                        class="block w-full py-4 bg-blue-600 text-white font-black rounded-2xl hover:bg-slate-900 transition-all active:scale-95 shadow-lg shadow-blue-100">
+                                    Join Circle
+                                </button>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+            <% }) %>
+        </div>
+    </div>
+</main>
+
+<script>
+async function joinCircle(id) {
+    const btn = document.getElementById(`btn-${id}`);
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> joining...';
+    btn.disabled = true;
+
+    try {
+        const response = await fetch(`/communities/${id}/join`, { 
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await response.json();
+
+        if (data.success) {
+            // Smoothly transform the button into the "Enter" state
+            btn.className = "block w-full text-center py-4 bg-slate-900 text-white font-black rounded-2xl transition-all";
+            btn.innerHTML = 'Joined! Redirecting...';
+            setTimeout(() => {
+                window.location.href = `/communities/${id}`;
+            }, 800);
+        }
+    } catch (err) {
+        console.error("Join error:", err);
+        btn.innerHTML = 'Join Circle';
+        btn.disabled = false;
+    }
+}
+
+</script>
+
+<%- include('../partials/footer') %>

@@ -1,0 +1,391 @@
+<nav id="mainNav" class="bg-white/95 backdrop-blur-xl sticky top-0 z-[100] border-b border-gray-100 transition-all duration-300">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-16 md:h-20">
+
+            <!-- ── LOGO ─────────────────────────────────────────────────── -->
+            <div class="flex items-center gap-6 lg:gap-10">
+                <a href="/books" class="flex items-center gap-2.5 group flex-shrink-0">
+                    <div class="bg-blue-600 p-2 md:p-2.5 rounded-xl md:rounded-2xl shadow-lg shadow-blue-200 group-hover:rotate-12 transition-all duration-300">
+                        <i class="fas fa-layer-group text-white text-base md:text-xl"></i>
+                    </div>
+                    <span class="text-xl md:text-2xl font-black text-slate-900 tracking-tighter uppercase">
+                        Book<span class="text-blue-600 italic">Vault</span>
+                    </span>
+                </a>
+
+                <!-- ── DESKTOP NAV LINKS ──────────────────────────────── -->
+                <div class="hidden lg:flex items-center gap-7 border-l border-slate-100 pl-8">
+                    <a href="/books" class="text-[11px] font-black text-slate-400 hover:text-blue-600 transition-colors uppercase tracking-[0.2em]">Explore</a>
+                    <% if (locals.user && user.role !== 'admin') { %>
+                        <a href="/books/my-library" class="text-[11px] font-black text-slate-400 hover:text-blue-600 transition-colors uppercase tracking-[0.2em] flex items-center gap-1.5">
+                            <i class="far fa-heart"></i> My Library
+                        </a>
+                    <% } %>
+                    <a href="/communities" class="text-[11px] font-black text-slate-400 hover:text-blue-600 transition-colors uppercase tracking-[0.2em]">Communities</a>
+                    <% if (!(locals.user && user.isPremium)) { %>
+                        <a href="/premium" class="text-[11px] font-black text-amber-500 hover:text-amber-600 transition-colors uppercase tracking-[0.2em] flex items-center gap-1.5">
+                            <i class="fas fa-crown"></i> Premium
+                        </a>
+                    <% } %>
+                    <% if (locals.user && user.role === 'admin') { %>
+                        <a href="/admin/dashboard" class="text-[11px] font-black text-blue-600 hover:text-slate-900 transition-colors uppercase tracking-[0.2em] flex items-center gap-1.5">
+                            <i class="fas fa-chart-line"></i> Admin
+                        </a>
+                    <% } %>
+                </div>
+            </div>
+
+            <!-- ── DESKTOP SEARCH ─────────────────────────────────────── -->
+            <div class="flex-grow max-w-sm xl:max-w-lg px-4 lg:px-8 hidden md:block">
+                <div class="relative group">
+                    <input
+                        type="text"
+                        id="navSearchInput"
+                        placeholder="Search titles or authors..."
+                        autocomplete="off"
+                        class="w-full pl-10 pr-10 py-2.5 bg-slate-50 ring-1 ring-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:shadow-lg focus:shadow-blue-50/50 transition-all duration-200 text-sm font-medium placeholder:text-slate-400 outline-none border-none"
+                    >
+                    <i class="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors text-xs"></i>
+                    <kbd id="searchKbd" class="absolute right-3 top-1/2 -translate-y-1/2 px-1.5 py-0.5 text-[10px] font-bold text-slate-300 border border-slate-200 rounded bg-white hidden lg:block">/</kbd>
+                    <!-- Live results dropdown -->
+                    <div id="searchDropdown" class="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden hidden z-50 max-h-80 overflow-y-auto">
+                        <div id="searchResults" class="py-2"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── RIGHT SIDE ─────────────────────────────────────────── -->
+            <div class="flex items-center gap-2 md:gap-3">
+
+                <!-- Mobile search toggle -->
+                <button id="mobileSearchToggle" class="md:hidden w-9 h-9 flex items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 transition-colors">
+                    <i class="fas fa-search text-sm"></i>
+                </button>
+
+                <% if (locals.user) { %>
+                    <!-- Premium badge -->
+                    <% if (user.isPremium) { %>
+                        <span class="hidden sm:flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider bg-amber-50 text-amber-500 border border-amber-100">
+                            <i class="fas fa-crown text-[9px]"></i> Pro
+                        </span>
+                    <% } %>
+
+                    <div class="hidden sm:block text-right">
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">
+                            <%= user.role === 'admin' ? 'Administrator' : 'Reader' %>
+                        </p>
+                        <p class="text-xs font-bold text-slate-900 leading-tight"><%= user.username %></p>
+                    </div>
+
+                    <a href="/profile" class="relative group flex-shrink-0">
+                        <div class="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-md shadow-blue-100 group-hover:bg-slate-900 group-hover:scale-105 transition-all duration-300">
+                            <span class="text-white font-black text-base uppercase"><%= user.username.charAt(0) %></span>
+                        </div>
+                        <span class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
+                    </a>
+
+                    <a href="/logout" class="p-2 text-slate-400 hover:text-red-500 transition-colors hidden sm:block" title="Logout">
+                        <i class="fas fa-power-off text-sm"></i>
+                    </a>
+                <% } else { %>
+                    <a href="/login" class="px-4 py-2 text-sm font-bold text-slate-600 hover:text-blue-600 transition-colors hidden sm:block">Sign In</a>
+                    <a href="/signup" class="bg-slate-900 text-white px-4 md:px-6 py-2.5 rounded-xl md:rounded-2xl text-xs md:text-sm font-black hover:bg-blue-600 transition-all shadow-lg shadow-slate-200/50 active:scale-95">
+                        Join Free
+                    </a>
+                <% } %>
+
+                <!-- Hamburger -->
+                <button id="hamburger" class="lg:hidden w-9 h-9 flex flex-col items-center justify-center gap-1.5 rounded-xl hover:bg-slate-100 transition-colors ml-1" aria-label="Menu">
+                    <span class="ham-line block w-5 h-0.5 bg-slate-700 rounded-full transition-all duration-300"></span>
+                    <span class="ham-line block w-5 h-0.5 bg-slate-700 rounded-full transition-all duration-300"></span>
+                    <span class="ham-line block w-5 h-0.5 bg-slate-700 rounded-full transition-all duration-300"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── MOBILE SEARCH BAR (slides down) ──────────────────────────────── -->
+    <div id="mobileSearchBar" class="md:hidden overflow-hidden max-h-0 transition-all duration-300 border-t border-gray-50">
+        <div class="px-4 py-3">
+            <div class="relative">
+                <input
+                    type="text"
+                    id="mobileSearchInput"
+                    placeholder="Search titles or authors..."
+                    autocomplete="off"
+                    class="w-full pl-10 pr-4 py-3 bg-slate-50 ring-1 ring-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-sm font-medium placeholder:text-slate-400 outline-none border-none"
+                >
+                <i class="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── MOBILE MENU ───────────────────────────────────────────────────── -->
+    <div id="mobileMenu" class="lg:hidden overflow-hidden max-h-0 transition-all duration-300 border-t border-gray-50">
+        <div class="px-4 py-4 space-y-1">
+
+            <a href="/books" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                <i class="fas fa-compass w-4 text-center"></i> Explore
+            </a>
+
+            <% if (locals.user) { %>
+                <% if (user.role !== 'admin') { %>
+                    <a href="/books/my-library" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                        <i class="far fa-heart w-4 text-center"></i> My Library
+                    </a>
+                <% } %>
+
+                <a href="/communities" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-slate-600 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-users w-4 text-center"></i> Communities
+                </a>
+
+                <% if (!user.isPremium) { %>
+                    <a href="/premium" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-amber-500 hover:bg-amber-50 transition-colors">
+                        <i class="fas fa-crown w-4 text-center"></i> Upgrade to Premium
+                    </a>
+                <% } %>
+
+                <% if (user.role === 'admin') { %>
+                    <a href="/admin/dashboard" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-blue-600 hover:bg-blue-50 transition-colors">
+                        <i class="fas fa-chart-line w-4 text-center"></i> Admin Dashboard
+                    </a>
+                <% } %>
+
+                <div class="border-t border-gray-100 mt-2 pt-2">
+                    <div class="flex items-center gap-3 px-4 py-3">
+                        <div class="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center flex-shrink-0">
+                            <span class="text-white font-black text-sm uppercase"><%= user.username.charAt(0) %></span>
+                        </div>
+                        <div>
+                            <p class="text-sm font-black text-slate-900"><%= user.username %></p>
+                            <p class="text-xs text-slate-400"><%= user.email %></p>
+                        </div>
+                    </div>
+                    <a href="/logout" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-red-500 hover:bg-red-50 transition-colors">
+                        <i class="fas fa-power-off w-4 text-center"></i> Logout
+                    </a>
+                </div>
+            <% } else { %>
+                <div class="border-t border-gray-100 mt-2 pt-2 flex gap-2">
+                    <a href="/login"  class="flex-1 text-center py-3 rounded-xl text-sm font-bold text-slate-600 border border-slate-200 hover:bg-slate-50 transition-colors">Sign In</a>
+                    <a href="/signup" class="flex-1 text-center py-3 rounded-xl text-sm font-black text-white bg-slate-900 hover:bg-blue-600 transition-colors">Join Free</a>
+                </div>
+            <% } %>
+        </div>
+    </div>
+</nav>
+
+<style>
+    /* Hamburger → X animation */
+    #hamburger.open .ham-line:nth-child(1) { transform: translateY(8px) rotate(45deg); }
+    #hamburger.open .ham-line:nth-child(2) { opacity: 0; transform: scaleX(0); }
+    #hamburger.open .ham-line:nth-child(3) { transform: translateY(-8px) rotate(-45deg); }
+
+    /* Search dropdown item hover */
+    .search-result-item:hover { background: #f8fafc; }
+
+    /* Smooth max-height transitions */
+    #mobileMenu, #mobileSearchBar { transition: max-height 0.35s cubic-bezier(0.4,0,0.2,1); }
+</style>
+
+<script>
+// ── HAMBURGER ──────────────────────────────────────────────────────────────
+const hamburger   = document.getElementById('hamburger');
+const mobileMenu  = document.getElementById('mobileMenu');
+
+hamburger.addEventListener('click', () => {
+    const isOpen = hamburger.classList.toggle('open');
+    mobileMenu.style.maxHeight = isOpen ? mobileMenu.scrollHeight + 'px' : '0';
+    // close search if open
+    mobileSearchBar.style.maxHeight = '0';
+    mobileSearchToggle.querySelector('i').className = 'fas fa-search text-sm';
+});
+
+// ── MOBILE SEARCH TOGGLE ───────────────────────────────────────────────────
+const mobileSearchToggle = document.getElementById('mobileSearchToggle');
+const mobileSearchBar    = document.getElementById('mobileSearchBar');
+const mobileSearchInput  = document.getElementById('mobileSearchInput');
+
+mobileSearchToggle.addEventListener('click', () => {
+    const isOpen = mobileSearchBar.style.maxHeight && mobileSearchBar.style.maxHeight !== '0px';
+    if (isOpen) {
+        mobileSearchBar.style.maxHeight = '0';
+        mobileSearchToggle.querySelector('i').className = 'fas fa-search text-sm';
+    } else {
+        mobileSearchBar.style.maxHeight = mobileSearchBar.scrollHeight + 60 + 'px';
+        mobileSearchToggle.querySelector('i').className = 'fas fa-times text-sm';
+        // close hamburger
+        hamburger.classList.remove('open');
+        mobileMenu.style.maxHeight = '0';
+        setTimeout(() => mobileSearchInput.focus(), 200);
+    }
+});
+
+// ── SEARCH LOGIC ───────────────────────────────────────────────────────────
+const desktopInput   = document.getElementById('navSearchInput');
+const mobileInput    = document.getElementById('mobileSearchInput');
+const searchDropdown = document.getElementById('searchDropdown');
+const searchResults  = document.getElementById('searchResults');
+let   searchTimeout  = null;
+
+// Wire both inputs to the same handler
+[desktopInput, mobileInput].forEach(input => {
+    if (!input) return;
+    input.addEventListener('input',  (e) => handleSearchInput(e.target.value, input));
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            const q = e.target.value.trim();
+            closeDropdown();
+            navigateToSearch(q);
+        }
+        if (e.key === 'Escape') closeDropdown();
+    });
+    input.addEventListener('blur', () => setTimeout(closeDropdown, 150));
+});
+
+function handleSearchInput(value, sourceInput) {
+    const q = value.trim();
+    clearTimeout(searchTimeout);
+
+    // If empty, close dropdown immediately but STILL trigger the UI filter reset
+    if (!q) { 
+        closeDropdown(); 
+        if (window.location.pathname === '/books') {
+            liveFilterBooks(""); // Explicitly clear the filter
+        }
+        return; 
+    }
+
+    searchTimeout = setTimeout(() => {
+        if (window.location.pathname === '/books') {
+            liveFilterBooks(q);
+        }
+        fetchSuggestions(q, sourceInput);
+    }, 300);
+}
+
+// Live filter the book grid (already on /books page)
+function liveFilterBooks(query) {
+    // Create params without search by default
+    const params = new URLSearchParams({ sort: 'newest', rating: 0, categories: '' });
+    
+    // Only add search if query has content
+    if (query) {
+        params.set('search', query);
+    }
+
+    fetch(`/books/filter?${params}`, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(r => r.text())
+    .then(html => {
+        const grid = document.getElementById('bookGrid');
+        if (grid) grid.innerHTML = html;
+        
+        // Sync URL: If empty, remove the search query param entirely
+        const newUrl = query 
+            ? `/books?search=${encodeURIComponent(query)}` 
+            : '/books';
+        window.history.replaceState({}, '', newUrl);
+    })
+    .catch(err => console.error('Search error:', err));
+}
+// Fetch suggestions for dropdown
+async function fetchSuggestions(query, sourceInput) {
+    try {
+        const res  = await fetch(`/books/filter?search=${encodeURIComponent(query)}`, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+        // Parse titles from the HTML response using a DOM parser
+        const html   = await res.text();
+        const parser = new DOMParser();
+        const doc    = parser.parseFromString(html, 'text/html');
+        const cards  = doc.querySelectorAll('h3');  // book title elements in bookCards.ejs
+
+        const titles = [];
+        cards.forEach(el => {
+            const text = el.textContent.trim();
+            if (text && titles.length < 6) titles.push(text);
+        });
+
+        if (titles.length === 0) {
+            closeDropdown(); return;
+        }
+
+        // Render dropdown near the input that's active
+        searchResults.innerHTML = titles.map(title => `
+            <div class="search-result-item px-4 py-3 cursor-pointer flex items-center gap-3 transition-colors"
+                 onmousedown="navigateToSearch('${title.replace(/'/g, "\\'")}')">
+                <i class="fas fa-book text-blue-400 text-xs flex-shrink-0"></i>
+                <span class="text-sm font-medium text-slate-700 truncate">${highlight(title, query)}</span>
+            </div>
+        `).join('') + `
+            <div class="border-t border-gray-50 px-4 py-2.5">
+                <button onmousedown="navigateToSearch('${query.replace(/'/g, "\\'")}');"
+                        class="text-xs font-bold text-blue-600 hover:underline">
+                    See all results for "${query}"
+                </button>
+            </div>
+        `;
+
+        // Position dropdown under whichever input is active
+        const rect = sourceInput.getBoundingClientRect();
+        searchDropdown.style.display = 'block';
+        searchDropdown.classList.remove('hidden');
+
+    } catch(e) {
+        closeDropdown();
+    }
+}
+
+function highlight(text, query) {
+    const re = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi');
+    return text.replace(re, '<mark class="bg-blue-50 text-blue-600 rounded px-0.5">$1</mark>');
+}
+
+function closeDropdown() {
+    searchDropdown.classList.add('hidden');
+    searchDropdown.style.display = '';
+}
+
+function navigateToSearch(query) {
+    closeDropdown();
+    if (window.location.pathname === '/books') {
+        liveFilterBooks(query);
+        // sync both inputs
+        desktopInput.value = query;
+        if (mobileInput) mobileInput.value = query;
+    } else {
+        window.location.href = `/books?search=${encodeURIComponent(query)}`;
+    }
+}
+
+// "/" shortcut focuses desktop search
+document.addEventListener('keydown', e => {
+    if (e.key === '/' && document.activeElement !== desktopInput && document.activeElement !== mobileInput
+        && !['INPUT','TEXTAREA'].includes(document.activeElement.tagName)) {
+        e.preventDefault();
+        desktopInput.focus();
+    }
+});
+
+// Pre-fill search input if page loaded with ?search= param
+window.addEventListener('DOMContentLoaded', () => {
+    const params = new URLSearchParams(window.location.search);
+    const q = params.get('search');
+    if (q) {
+        if (desktopInput) desktopInput.value = q;
+        if (mobileInput)  mobileInput.value  = q;
+    }
+});
+
+// ── SCROLL SHADOW ──────────────────────────────────────────────────────────
+window.addEventListener('scroll', () => {
+    const nav = document.getElementById('mainNav');
+    if (window.scrollY > 20) {
+        nav.classList.add('shadow-md','shadow-slate-200/50');
+    } else {
+        nav.classList.remove('shadow-md','shadow-slate-200/50');
+    }
+}, { passive: true });
+</script>

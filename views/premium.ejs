@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <%- include('./partials/head', { title: 'Upgrade to Premium | BookVault' }) %>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --ink: #0c0c14;
+            --ink2: #1a1a2e;
+            --gold: #f59e0b;
+            --gold2: #fbbf24;
+            --gold-light: #fffbeb;
+            --blue: #2563eb;
+            --surface: #f8fafc;
+            --white: #ffffff;
+            --muted: #64748b;
+            --border: #e2e8f0;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'DM Sans', sans-serif; background: var(--surface); color: var(--ink); }
+        .syne { font-family: 'Syne', sans-serif; }
+
+        /* Hero gradient */
+        .hero-bg {
+            background: linear-gradient(135deg, var(--ink2) 0%, #0f172a 40%, #1e1b4b 100%);
+        }
+
+        /* Plan card */
+        .plan-card {
+            transition: transform .25s ease, box-shadow .25s ease;
+            cursor: pointer;
+            position: relative;
+        }
+        .plan-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 24px 60px rgba(0,0,0,.12);
+        }
+        .plan-card.selected {
+            border-color: var(--gold) !important;
+            box-shadow: 0 0 0 3px rgba(245,158,11,.25), 0 20px 50px rgba(245,158,11,.12);
+        }
+        .plan-card.selected .select-btn {
+            background: var(--gold);
+            color: var(--ink);
+        }
+        .plan-card.popular {
+            border-color: var(--gold) !important;
+        }
+
+        /* Feature check */
+        .feat-check { color: var(--gold); }
+        .feat-x     { color: #cbd5e1; }
+
+        /* Shimmer on popular badge */
+        @keyframes shimmer {
+            0%   { background-position: -200% center; }
+            100% { background-position: 200% center; }
+        }
+        .shimmer-text {
+            background: linear-gradient(90deg, #f59e0b 0%, #fde68a 40%, #f59e0b 80%);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shimmer 2.5s linear infinite;
+        }
+
+        /* CTA button */
+        .cta-btn {
+            background: linear-gradient(135deg, var(--gold) 0%, #d97706 100%);
+            transition: all .2s;
+        }
+        .cta-btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
+        .cta-btn:active { transform: scale(.97); }
+
+        /* Comparison table */
+        .comp-row:nth-child(even) { background: rgba(241,245,249,.6); }
+
+        /* FAQ accordion */
+        .faq-answer { max-height: 0; overflow: hidden; transition: max-height .35s ease; }
+        .faq-item.open .faq-answer { max-height: 300px; }
+        .faq-item.open .faq-icon { transform: rotate(45deg); }
+        .faq-icon { transition: transform .25s ease; }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .fade-up { animation: fadeUp .5s ease forwards; }
+        .delay-1 { animation-delay: .1s; opacity: 0; }
+        .delay-2 { animation-delay: .2s; opacity: 0; }
+        .delay-3 { animation-delay: .3s; opacity: 0; }
+    </style>
+</head>
+<body>
+    <%- include('./partials/navbar') %>
+
+    <!-- ── HERO ───────────────────────────────────────────────────────────── -->
+    <section class="hero-bg pt-20 pb-32 px-6 text-center relative overflow-hidden">
+        <!-- Decorative orbs -->
+        <div style="width:500px;height:500px;background:radial-gradient(circle,rgba(245,158,11,.15),transparent 70%);position:absolute;top:-150px;left:50%;transform:translateX(-50%);pointer-events:none;"></div>
+
+        <% if (locals.user && user.isPremium) { %>
+            <!-- Already premium state -->
+            <div class="fade-up max-w-2xl mx-auto">
+                <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6 text-xs font-black uppercase tracking-widest" style="background:rgba(245,158,11,.15);color:var(--gold)">
+                    <i class="fas fa-crown"></i> Active Premium Member
+                </div>
+                <h1 class="syne text-5xl md:text-6xl font-black text-white mb-4">You're in the Vault.</h1>
+                <p style="color:#94a3b8" class="text-lg mb-8">Your premium access is active. Enjoy unlimited downloads.</p>
+                <div class="inline-flex items-center gap-4 p-6 rounded-3xl mb-8" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1)">
+                    <div class="text-center px-6 border-r" style="border-color:rgba(255,255,255,.1)">
+                        <p class="syne text-2xl font-black text-white"><%= user.subscription ? user.subscription.plan : 'Premium' %></p>
+                        <p class="text-xs uppercase tracking-widest mt-1" style="color:#64748b">Current Plan</p>
+                    </div>
+                    <div class="text-center px-6 border-r" style="border-color:rgba(255,255,255,.1)">
+                        <p class="syne text-2xl font-black" style="color:var(--gold)">
+                            <%= user.subscription && user.subscription.expiresAt ? new Date(user.subscription.expiresAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : 'Lifetime' %>
+                        </p>
+                        <p class="text-xs uppercase tracking-widest mt-1" style="color:#64748b">Expires</p>
+                    </div>
+                    <div class="text-center px-6">
+                        <p class="syne text-2xl font-black text-green-400">Active</p>
+                        <p class="text-xs uppercase tracking-widest mt-1" style="color:#64748b">Status</p>
+                    </div>
+                </div>
+                <a href="/books" class="cta-btn inline-flex items-center gap-2 px-8 py-4 rounded-2xl font-black text-sm text-white shadow-xl">
+                    <i class="fas fa-download"></i> Start Downloading
+                </a>
+            </div>
+        <% } else { %>
+            <!-- Non-premium state -->
+            <div class="fade-up max-w-3xl mx-auto">
+                <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6 text-xs font-black uppercase tracking-widest" style="background:rgba(245,158,11,.15);color:var(--gold)">
+                    <i class="fas fa-lock-open"></i> Unlock Full Access
+                </div>
+                <h1 class="syne text-5xl md:text-7xl font-black text-white mb-4 leading-tight">
+                    Unlock the <span class="shimmer-text">Full Vault.</span>
+                </h1>
+                <p style="color:#94a3b8" class="text-lg mb-10 max-w-xl mx-auto leading-relaxed">
+                    Get unlimited access to every premium book, PDF downloads, and exclusive reading communities — all in one membership.
+                </p>
+                <div class="flex flex-wrap justify-center gap-6 mb-10">
+                    <% [
+                        { icon: 'fa-file-pdf', text: 'Unlimited PDF Downloads' },
+                        { icon: 'fa-crown', text: 'All Premium Books' },
+                        { icon: 'fa-file-export', text: 'Export Library PDF' }
+                    ].forEach(f => { %>
+                        <div class="flex items-center gap-2 text-sm font-bold" style="color:#cbd5e1">
+                            <i class="fas <%= f.icon %>" style="color:var(--gold)"></i> <%= f.text %>
+                        </div>
+                    <% }) %>
+                </div>
+                <button onclick="scrollToPlans()" class="cta-btn inline-flex items-center gap-2 px-10 py-4 rounded-2xl font-black text-sm shadow-2xl" style="color:var(--ink)">
+                    <i class="fas fa-crown"></i> See All Plans
+                </button>
+            </div>
+        <% } %>
+    </section>
+
+    <!-- ── PLANS ──────────────────────────────────────────────────────────── -->
+    <% if (!(locals.user && user.isPremium)) { %>
+    <section id="plans" class="max-w-6xl mx-auto px-6 -mt-16 pb-20">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+
+            <!-- ── MONTHLY ── -->
+            <div id="card-monthly" class="plan-card bg-white rounded-3xl border-2 p-8 fade-up delay-1"
+                 style="border-color:var(--border)"
+                 onclick="selectPlan('monthly')">
+                <div class="mb-6">
+                    <div class="w-12 h-12 rounded-2xl flex items-center justify-center mb-4" style="background:#eff6ff">
+                        <i class="fas fa-calendar-day text-blue-500 text-lg"></i>
+                    </div>
+                    <h3 class="syne text-xl font-extrabold mb-1" style="color:var(--ink)">Monthly</h3>
+                    <p class="text-xs font-bold uppercase tracking-widest" style="color:var(--muted)">Flexible access</p>
+                </div>
+
+                <div class="mb-6">
+                    <span class="syne text-4xl font-black" style="color:var(--ink)">₹99</span>
+                    <span class="text-sm font-bold" style="color:var(--muted)">/month</span>
+                </div>
+
+                <ul class="space-y-3 mb-8 text-sm">
+                    <% [
+                        { text: 'All premium books', ok: true },
+                        { text: 'Unlimited PDF downloads', ok: true },
+                        { text: 'Export library PDF', ok: true },
+                        { text: 'Priority support', ok: false },
+                        { text: 'Offline reading mode', ok: false }
+                    ].forEach(f => { %>
+                    <li class="flex items-center gap-2.5 font-medium" style="color:<%= f.ok ? 'var(--ink)' : '#94a3b8' %>">
+                        <i class="fas <%= f.ok ? 'fa-check-circle feat-check' : 'fa-times-circle feat-x' %> text-sm flex-shrink-0"></i>
+                        <%= f.text %>
+                    </li>
+                    <% }) %>
+                </ul>
+
+                <button class="select-btn w-full py-3.5 rounded-2xl font-black text-sm transition-all border-2"
+                        style="border-color:var(--blue);color:var(--blue);background:transparent"
+                        onclick="selectPlan('monthly')">
+                    Choose Monthly
+                </button>
+            </div>
+
+            <!-- ── ANNUAL (POPULAR) ── -->
+            <div id="card-annual" class="plan-card bg-white rounded-3xl border-2 p-8 fade-up delay-2"
+                 style="border-color:var(--gold);margin-top:-12px"
+                 onclick="selectPlan('annual')">
+
+                <div class="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider shadow-lg" style="background:var(--gold);color:var(--ink)">
+                    <i class="fas fa-fire mr-1"></i> Most Popular
+                </div>
+
+                <div class="mb-6">
+                    <div class="w-12 h-12 rounded-2xl flex items-center justify-center mb-4" style="background:var(--gold-light)">
+                        <i class="fas fa-crown text-amber-500 text-lg"></i>
+                    </div>
+                    <h3 class="syne text-xl font-extrabold mb-1" style="color:var(--ink)">Annual</h3>
+                    <p class="text-xs font-bold uppercase tracking-widest" style="color:var(--muted)">Best value · Save 50%</p>
+                </div>
+
+                <div class="mb-2">
+                    <span class="syne text-4xl font-black" style="color:var(--ink)">₹499</span>
+                    <span class="text-sm font-bold" style="color:var(--muted)">/year</span>
+                </div>
+                <p class="text-xs font-bold mb-6" style="color:var(--gold)">
+                    <s class="text-gray-400 font-normal">₹1,188/year</s> &nbsp;Save ₹689
+                </p>
+
+                <ul class="space-y-3 mb-8 text-sm">
+                    <% [
+                        { text: 'All premium books', ok: true },
+                        { text: 'Unlimited PDF downloads', ok: true },
+                        { text: 'Export library PDF', ok: true },
+                        { text: 'Priority support', ok: true },
+                        { text: 'Offline reading mode', ok: false }
+                    ].forEach(f => { %>
+                    <li class="flex items-center gap-2.5 font-medium" style="color:<%= f.ok ? 'var(--ink)' : '#94a3b8' %>">
+                        <i class="fas <%= f.ok ? 'fa-check-circle feat-check' : 'fa-times-circle feat-x' %> text-sm flex-shrink-0"></i>
+                        <%= f.text %>
+                    </li>
+                    <% }) %>
+                </ul>
+
+                <button class="select-btn cta-btn w-full py-3.5 rounded-2xl font-black text-sm shadow-lg" style="color:var(--ink)"
+                        onclick="selectPlan('annual')">
+                    <i class="fas fa-crown mr-1"></i> Choose Annual
+                </button>
+            </div>
+
+            <!-- ── LIFETIME ── -->
+            <div id="card-lifetime" class="plan-card rounded-3xl border-2 p-8 fade-up delay-3"
+                 style="background:var(--ink2);border-color:#334155"
+                 onclick="selectPlan('lifetime')">
+                <div class="mb-6">
+                    <div class="w-12 h-12 rounded-2xl flex items-center justify-center mb-4" style="background:rgba(139,92,246,.2)">
+                        <i class="fas fa-infinity text-purple-400 text-lg"></i>
+                    </div>
+                    <h3 class="syne text-xl font-extrabold mb-1 text-white">Lifetime</h3>
+                    <p class="text-xs font-bold uppercase tracking-widest" style="color:#64748b">One-time · Forever</p>
+                </div>
+
+                <div class="mb-6">
+                    <span class="syne text-4xl font-black text-white">₹999</span>
+                    <span class="text-sm font-bold" style="color:#64748b"> one-time</span>
+                </div>
+
+                <ul class="space-y-3 mb-8 text-sm">
+                    <% [
+                        { text: 'All premium books', ok: true },
+                        { text: 'Unlimited PDF downloads', ok: true },
+                        { text: 'Export library PDF', ok: true },
+                        { text: 'Priority support', ok: true },
+                        { text: 'Offline reading mode', ok: true }
+                    ].forEach(f => { %>
+                    <li class="flex items-center gap-2.5 font-medium" style="color:white">
+                        <i class="fas fa-check-circle text-sm flex-shrink-0" style="color:#a78bfa"></i>
+                        <%= f.text %>
+                    </li>
+                    <% }) %>
+                </ul>
+
+                <button class="select-btn w-full py-3.5 rounded-2xl font-black text-sm transition-all"
+                        style="background:rgba(255,255,255,.1);color:white;border:1px solid rgba(255,255,255,.2)"
+                        onclick="selectPlan('lifetime')">
+                    Choose Lifetime
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── FEATURE COMPARISON TABLE ──────────────────────────────────────── -->
+    <section class="max-w-4xl mx-auto px-6 pb-20">
+        <h2 class="syne text-3xl font-extrabold text-center mb-10" style="color:var(--ink)">Full Feature Comparison</h2>
+        <div class="bg-white rounded-3xl border overflow-hidden shadow-sm" style="border-color:var(--border)">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr style="background:var(--ink2)">
+                        <th class="px-6 py-4 text-left text-xs font-black uppercase tracking-widest text-white">Feature</th>
+                        <th class="px-6 py-4 text-center text-xs font-black uppercase tracking-widest" style="color:#94a3b8">Free</th>
+                        <th class="px-6 py-4 text-center text-xs font-black uppercase tracking-widest" style="color:var(--gold2)">Monthly</th>
+                        <th class="px-6 py-4 text-center text-xs font-black uppercase tracking-widest" style="color:var(--gold)">Annual</th>
+                        <th class="px-6 py-4 text-center text-xs font-black uppercase tracking-widest text-purple-300">Lifetime</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% [
+                        { feature: 'Browse book catalog',        free: true,  monthly: true,  annual: true,  lifetime: true  },
+                        { feature: 'Save books to library',      free: true,  monthly: true,  annual: true,  lifetime: true  },
+                        { feature: 'Download free books',        free: true,  monthly: true,  annual: true,  lifetime: true  },
+                        { feature: 'Download premium books',     free: false, monthly: true,  annual: true,  lifetime: true  },
+                        { feature: 'Export library as PDF',      free: false, monthly: true,  annual: true,  lifetime: true  },
+                        { feature: 'Join reading communities',   free: true,  monthly: true,  annual: true,  lifetime: true  },
+                        { feature: 'Priority email support',     free: false, monthly: false, annual: true,  lifetime: true  },
+                        { feature: 'Offline reading mode',       free: false, monthly: false, annual: false, lifetime: true  },
+                        { feature: 'Future features included',   free: false, monthly: false, annual: true,  lifetime: true  },
+                    ].forEach((row, i) => { %>
+                    <tr class="comp-row border-t" style="border-color:var(--border)">
+                        <td class="px-6 py-4 font-semibold" style="color:var(--ink)"><%= row.feature %></td>
+                        <td class="px-6 py-4 text-center"><i class="fas <%= row.free     ? 'fa-check text-green-400' : 'fa-times text-gray-300' %>"></i></td>
+                        <td class="px-6 py-4 text-center"><i class="fas <%= row.monthly  ? 'fa-check text-blue-400'  : 'fa-times text-gray-300' %>"></i></td>
+                        <td class="px-6 py-4 text-center"><i class="fas <%= row.annual   ? 'fa-check'                : 'fa-times text-gray-300' %>" style="<%= row.annual ? 'color:var(--gold)' : '' %>"></i></td>
+                        <td class="px-6 py-4 text-center"><i class="fas <%= row.lifetime ? 'fa-check text-purple-400': 'fa-times text-gray-300' %>"></i></td>
+                    </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- ── FAQ ────────────────────────────────────────────────────────────── -->
+    <section class="max-w-3xl mx-auto px-6 pb-24">
+        <h2 class="syne text-3xl font-extrabold text-center mb-10" style="color:var(--ink)">Frequently Asked</h2>
+        <div class="space-y-3">
+            <% [
+                { q: 'Can I cancel my subscription anytime?', a: 'Yes, you can cancel monthly or annual plans at any time from your profile settings. Your access continues until the end of the billing period.' },
+                { q: 'Does the Lifetime plan ever expire?', a: 'No. Lifetime access means forever — pay once and access every premium book and all future content at no additional cost.' },
+                { q: 'What happens to my downloaded PDFs after cancellation?', a: 'PDFs you have already downloaded remain on your device. You just lose the ability to download new premium PDFs after cancellation.' },
+                { q: 'Is my payment information secure?', a: 'Absolutely. We use industry-standard encryption and never store your raw card details on our servers.' },
+                { q: 'Can I switch plans later?', a: 'Yes. You can upgrade from Monthly to Annual or Lifetime at any time. The remaining days are prorated.' }
+            ].forEach((item, i) => { %>
+            <div class="faq-item bg-white rounded-2xl border overflow-hidden" style="border-color:var(--border)">
+                <button onclick="toggleFaq(this)" class="w-full flex items-center justify-between px-6 py-5 text-left font-bold text-sm" style="color:var(--ink)">
+                    <%= item.q %>
+                    <i class="fas fa-plus faq-icon text-gray-400 flex-shrink-0 ml-4 text-xs"></i>
+                </button>
+                <div class="faq-answer">
+                    <p class="px-6 pb-5 text-sm leading-relaxed" style="color:var(--muted)"><%= item.a %></p>
+                </div>
+            </div>
+            <% }) %>
+        </div>
+    </section>
+    <% } %> <!-- end non-premium block -->
+
+    <%- include('./partials/footer') %>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         PURCHASE CONFIRMATION MODAL
+    ══════════════════════════════════════════════════════════════════════ -->
+    <div id="purchaseModal" style="display:none" class="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden" id="purchaseModalContent">
+            <div class="px-8 py-6" style="background:var(--ink2)">
+                <h2 class="syne text-white text-xl font-extrabold">Confirm Your Plan</h2>
+                <p style="color:#94a3b8" class="text-xs mt-1">Review your selection before proceeding</p>
+            </div>
+
+            <div class="p-8 space-y-5">
+                <!-- Plan summary -->
+                <div class="p-5 rounded-2xl" style="background:var(--gold-light);border:1px solid var(--gold)">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p class="font-black text-sm" id="modalPlanName" style="color:var(--ink)"></p>
+                            <p class="text-xs mt-0.5" id="modalPlanDesc" style="color:var(--muted)"></p>
+                        </div>
+                        <p class="syne text-2xl font-black" id="modalPlanPrice" style="color:var(--gold)"></p>
+                    </div>
+                </div>
+
+                <!-- Simulated payment form -->
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-black uppercase tracking-wider mb-1.5" style="color:var(--muted)">Card Number</label>
+                        <input id="cardNumber" maxlength="19" placeholder="4242 4242 4242 4242"
+                               oninput="formatCard(this)"
+                               class="w-full px-4 py-3 rounded-xl text-sm border focus:outline-none focus:ring-2 focus:ring-amber-400" style="border-color:var(--border)">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-black uppercase tracking-wider mb-1.5" style="color:var(--muted)">Expiry</label>
+                            <input id="cardExpiry" maxlength="5" placeholder="MM/YY"
+                                   oninput="formatExpiry(this)"
+                                   class="w-full px-4 py-3 rounded-xl text-sm border focus:outline-none focus:ring-2 focus:ring-amber-400" style="border-color:var(--border)">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-black uppercase tracking-wider mb-1.5" style="color:var(--muted)">CVV</label>
+                            <input id="cardCvv" maxlength="3" placeholder="123" type="password"
+                                   class="w-full px-4 py-3 rounded-xl text-sm border focus:outline-none focus:ring-2 focus:ring-amber-400" style="border-color:var(--border)">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-black uppercase tracking-wider mb-1.5" style="color:var(--muted)">Name on Card</label>
+                        <input id="cardName" placeholder="<%= locals.user ? user.username : 'Your Name' %>"
+                               class="w-full px-4 py-3 rounded-xl text-sm border focus:outline-none focus:ring-2 focus:ring-amber-400" style="border-color:var(--border)">
+                    </div>
+                </div>
+
+                <p class="text-xs text-center" style="color:var(--muted)">
+                    <i class="fas fa-lock mr-1"></i> Simulated payment — no real charge
+                </p>
+
+                <div class="flex gap-3">
+                    <button onclick="closePurchaseModal()"
+                            class="flex-1 py-3.5 rounded-2xl font-black text-sm border transition-all hover:bg-gray-50" style="border-color:var(--border);color:var(--muted)">
+                        Cancel
+                    </button>
+                    <button onclick="confirmPurchase()" id="payBtn"
+                            class="flex-1 cta-btn py-3.5 rounded-2xl font-black text-sm shadow-lg" style="color:var(--ink)">
+                        <i class="fas fa-crown mr-1"></i> Activate Plan
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const plans = {
+            monthly:  { name: 'Monthly Plan',  desc: 'Billed every month · Cancel anytime',    price: '₹99',  priceNum: 99,  duration: 30  },
+            annual:   { name: 'Annual Plan',   desc: 'Billed once per year · Best value',       price: '₹499', priceNum: 499, duration: 365 },
+            lifetime: { name: 'Lifetime Plan', desc: 'One-time payment · Access forever',       price: '₹999', priceNum: 999, duration: null }
+        };
+        let selectedPlan = null;
+
+        function scrollToPlans() {
+            document.getElementById('plans').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // ── PLAN SELECTION ─────────────────────────────────────────────────
+        function selectPlan(planKey) {
+            // Deselect all
+            ['monthly','annual','lifetime'].forEach(k => {
+                const card = document.getElementById(`card-${k}`);
+                if (card) card.classList.remove('selected');
+            });
+
+            // Select chosen
+            const card = document.getElementById(`card-${planKey}`);
+            if (card) card.classList.add('selected');
+
+            selectedPlan = planKey;
+
+            // Populate modal
+            const p = plans[planKey];
+            document.getElementById('modalPlanName').textContent  = p.name;
+            document.getElementById('modalPlanDesc').textContent  = p.desc;
+            document.getElementById('modalPlanPrice').textContent = p.price;
+
+            // Show modal
+            document.getElementById('purchaseModal').style.display = 'flex';
+        }
+
+        function closePurchaseModal() {
+            document.getElementById('purchaseModal').style.display = 'none';
+        }
+
+        // Close on backdrop click
+        document.getElementById('purchaseModal').addEventListener('click', function(e) {
+            if (e.target === this) closePurchaseModal();
+        });
+
+        // ── CARD FORMATTERS ────────────────────────────────────────────────
+        function formatCard(el) {
+            let v = el.value.replace(/\D/g, '').substring(0, 16);
+            el.value = v.replace(/(.{4})/g, '$1 ').trim();
+        }
+        function formatExpiry(el) {
+            let v = el.value.replace(/\D/g, '').substring(0, 4);
+            if (v.length >= 2) v = v.substring(0,2) + '/' + v.substring(2);
+            el.value = v;
+        }
+
+        // ── PURCHASE ───────────────────────────────────────────────────────
+        async function confirmPurchase() {
+            const card   = document.getElementById('cardNumber').value.replace(/\s/g,'');
+            const expiry = document.getElementById('cardExpiry').value;
+            const cvv    = document.getElementById('cardCvv').value;
+            const name   = document.getElementById('cardName').value.trim();
+
+            // Basic validation
+            if (card.length < 16)   return shake('cardNumber',  'Enter a valid 16-digit card number');
+            if (expiry.length < 5)  return shake('cardExpiry',  'Enter expiry as MM/YY');
+            if (cvv.length < 3)     return shake('cardCvv',     'Enter 3-digit CVV');
+            if (!name)              return shake('cardName',     'Enter name on card');
+
+            const btn = document.getElementById('payBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Processing...';
+
+            try {
+                const res  = await fetch('/user/upgrade', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ plan: selectedPlan })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    closePurchaseModal();
+                    Swal.fire({
+                        icon: 'success',
+                        title: '👑 Welcome to Premium!',
+                        html: `<p style="color:#64748b">Your <strong>${plans[selectedPlan].name}</strong> is now active.<br>Enjoy unlimited downloads!</p>`,
+                        confirmButtonText: 'Start Downloading',
+                        confirmButtonColor: '#f59e0b',
+                        customClass: { popup: 'rounded-3xl' }
+                    }).then(() => window.location.href = '/books');
+                } else if (res.status === 401) {
+                    closePurchaseModal();
+                    Swal.fire({
+                        icon: 'warning', title: 'Login Required',
+                        text: 'Please log in to purchase a plan.',
+                        confirmButtonText: 'Go to Login',
+                        confirmButtonColor: '#2563eb'
+                    }).then(r => { if (r.isConfirmed) window.location.href = '/login?returnTo=/premium'; });
+                } else {
+                    Swal.fire({ icon:'error', title:'Purchase Failed', text: data.message || 'Something went wrong.' });
+                }
+            } catch(err) {
+                Swal.fire({ icon:'error', title:'Network Error', text:'Please check your connection and try again.' });
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-crown mr-1"></i> Activate Plan';
+            }
+        }
+
+        // Shake + highlight invalid field
+        function shake(fieldId, msg) {
+            const el = document.getElementById(fieldId);
+            el.style.borderColor = '#ef4444';
+            el.style.boxShadow = '0 0 0 3px rgba(239,68,68,.2)';
+            el.focus();
+            setTimeout(() => {
+                el.style.borderColor = '';
+                el.style.boxShadow = '';
+            }, 1500);
+            // small toast
+            Swal.fire({ toast:true, position:'top-end', showConfirmButton:false, timer:2000,
+                        icon:'warning', title: msg });
+        }
+
+        // ── FAQ ────────────────────────────────────────────────────────────
+        function toggleFaq(btn) {
+            const item = btn.closest('.faq-item');
+            const isOpen = item.classList.contains('open');
+            document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+            if (!isOpen) item.classList.add('open');
+        }
+    </script>
+</body>
+</html>

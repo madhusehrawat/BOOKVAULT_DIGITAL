@@ -1,0 +1,123 @@
+<%- include('partials/head') %>
+<%- include('partials/navbar') %>
+
+<main class="min-h-screen bg-slate-50 pt-32 pb-12 px-6">
+    <div class="max-w-4xl mx-auto">
+        
+        <a href="/" class="inline-flex items-center gap-2 text-[11px] font-black text-slate-400 hover:text-blue-600 transition-all uppercase tracking-[0.2em] mb-8 group">
+            <i class="fas fa-arrow-left transition-transform group-hover:-translate-x-1"></i>
+            Back to Home
+        </a>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
+            <div class="space-y-8">
+                <div>
+                    <h1 class="text-4xl font-black text-slate-900 tracking-tighter uppercase italic mb-4">
+                        Get in <span class="text-blue-600">Touch</span>
+                    </h1>
+                    <p class="text-slate-500 font-bold leading-relaxed max-w-sm">
+                        Have a question about BookVault? We're here to help you build and manage your digital library.
+                    </p>
+                </div>
+
+                <div class="space-y-6">
+                    <div class="flex items-center gap-4 group">
+                        <div class="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-blue-600 border border-slate-100 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Email Us</p>
+                            <p class="font-bold text-slate-900">support@bookvault.com</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-4 group">
+                        <div class="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-blue-600 border border-slate-100 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Location</p>
+                            <p class="font-bold text-slate-900">Remote Headquarters</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-[2.5rem] p-8 shadow-xl shadow-slate-200/50 border border-slate-100 relative overflow-hidden">
+                <form id="contactForm" class="space-y-5">
+                    <div>
+                        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 ml-1">Full Name</label>
+                        <input type="text" name="name" required placeholder="John Doe"
+                               class="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all font-bold text-slate-900">
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 ml-1">Email Address</label>
+                        <input type="email" name="email" required placeholder="john@example.com"
+                               class="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all font-bold text-slate-900">
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 ml-1">Your Message</label>
+                        <textarea name="message" rows="4" required placeholder="How can we help?"
+                                  class="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all font-bold text-slate-900 resize-none"></textarea>
+                    </div>
+
+                    <button type="submit" id="submitBtn" 
+                            class="w-full py-4 bg-slate-900 text-white text-[11px] font-black uppercase tracking-widest rounded-2xl hover:bg-blue-600 transition-all duration-300 active:scale-95 shadow-lg shadow-blue-100 flex items-center justify-center gap-3">
+                        <span>Send Message</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+    document.getElementById('contactForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('submitBtn');
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData.entries());
+
+        // 1. Enter Loading State
+        btn.disabled = true;
+        const originalContent = btn.innerHTML;
+        btn.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i> <span>Sending...</span>`;
+
+        try {
+            const response = await fetch('/contact', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                // 2. Success State
+                btn.classList.replace('bg-slate-900', 'bg-green-500');
+                btn.innerHTML = `<i class="fas fa-check"></i> <span>Message Sent!</span>`;
+                e.target.reset();
+
+                // Reset button after 3 seconds
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.classList.replace('bg-green-500', 'bg-slate-900');
+                    btn.innerHTML = originalContent;
+                }, 3000);
+            } else {
+                throw new Error(result.message || 'Submission failed');
+            }
+        } catch (err) {
+            console.error('Contact error:', err);
+            alert(err.message || 'Something went wrong. Please try again.');
+            
+            // 3. Reset to original state on error
+            btn.disabled = false;
+            btn.innerHTML = originalContent;
+        }
+    });
+</script>
+
+<%- include('partials/footer') %>

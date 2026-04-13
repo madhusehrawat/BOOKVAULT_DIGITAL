@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <%- include('./partials/head', { title: 'Book Store | BookVault' }) %>
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        /* ── SCROLLBAR ────────────────────────────────────────────────── */
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 10px; }
+
+        /* ── MODAL OPEN ANIMATION ─────────────────────────────────────── */
+        @keyframes modalIn {
+            from { opacity: 0; transform: scale(0.96) translateY(12px); }
+            to   { opacity: 1; transform: scale(1)    translateY(0); }
+        }
+        .modal-panel { animation: modalIn 0.28s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+
+        /* ── REVIEW FADE IN ───────────────────────────────────────────── */
+        @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+        .animate-fadeIn { animation: fadeIn 0.35s ease forwards; }
+
+        /* ── MODAL SIZE: full-screen on mobile, large box on desktop ──── */
+        #bookModalPanel {
+            width: 100%;
+            max-width: 960px;          /* desktop cap                  */
+            height: 92vh;              /* fill most of viewport        */
+            max-height: 92vh;
+        }
+        @media (max-width: 767px) {
+            #bookModalPanel {
+                height: 100dvh;        /* full screen on mobile        */
+                max-height: 100dvh;
+                border-radius: 0;
+            }
+        }
+
+        /* ── DRAWER ───────────────────────────────────────────────────── */
+        #drawerPanel { transition: transform 0.3s cubic-bezier(0.4,0,0.2,1); }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen flex flex-col">
+
+    <%- include('./partials/navbar') %>
+
+    <main class="max-w-7xl mx-auto px-4 py-8 flex-grow w-full">
+
+        <!-- ── PAGE HEADER ────────────────────────────────────────────── -->
+        <div class="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <h2 class="text-3xl font-black text-gray-900 tracking-tight italic">Trending Titles</h2>
+                <p class="text-gray-500 text-sm mt-1">The most discussed assets in the vault this week.</p>
+            </div>
+            <div class="flex items-center gap-3 w-full md:w-auto">
+                <select id="sortOrder" onchange="applyFilters()"
+                        class="bg-white ring-1 ring-gray-200 rounded-xl px-4 py-2.5 text-sm font-bold text-gray-700 outline-none focus:ring-2 focus:ring-blue-500 transition-all border-none">
+                    <option value="newest">Newest First</option>
+                    <option value="rating">Top Rated</option>
+                    <option value="priceLow">Price: Low → High</option>
+                    <option value="priceHigh">Price: High → Low</option>
+                </select>
+                <div id="resultsCount" class="hidden lg:flex items-center gap-1.5 text-sm font-bold text-blue-600 bg-blue-50 px-5 py-2.5 rounded-xl border border-blue-100 shadow-sm">
+                    <i class="fas fa-layer-group text-xs"></i>
+                    <span><%= books.length %> Resources</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── MAIN LAYOUT ─────────────────────────────────────────────── -->
+        <div class="flex flex-col lg:flex-row gap-8">
+
+            <!-- Sidebar filters -->
+            <aside class="w-full lg:w-56 shrink-0">
+                <div class="sticky top-24 bg-white p-6 rounded-3xl border border-gray-100 shadow-sm space-y-7">
+                    <div>
+                        <h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-4">Categories</h4>
+                        <div class="space-y-2.5">
+                            <% ['Development','Design','Software Engineering','Business','Programming','Self-Help','Finance','Productivity'].forEach(cat => { %>
+                                <label class="flex items-center gap-3 cursor-pointer group">
+                                    <input type="checkbox" name="category" value="<%= cat %>" onchange="applyFilters()"
+                                           class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 accent-blue-600">
+                                    <span class="text-sm font-medium text-gray-600 group-hover:text-blue-600 transition-colors"><%= cat %></span>
+                                </label>
+                            <% }) %>
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-4">Min Rating</h4>
+                        <div class="space-y-2.5">
+                            <% [4,3,2].forEach(num => { %>
+                                <label class="flex items-center gap-3 cursor-pointer group">
+                                    <input type="radio" name="minRating" value="<%= num %>" onchange="applyFilters()"
+                                           class="w-4 h-4 border-gray-300 text-blue-600 focus:ring-blue-500 accent-blue-600">
+                                    <span class="text-sm font-medium text-gray-600 group-hover:text-yellow-500 flex items-center gap-1">
+                                        <% for(let s=0;s<num;s++) { %><i class="fas fa-star text-yellow-400 text-xs"></i><% } %>
+                                        &nbsp;<%= num %>+
+                                    </span>
+                                </label>
+                            <% }) %>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Book grid -->
+            <div id="bookGrid" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 flex-grow">
+                <%- include('./partials/bookCards', { books: books }) %>
+            </div>
+        </div>
+    </main>
+
+    <%- include('./partials/footer') %>
+
+    <!-- ════════════════════════════════════════════════════════════════════
+         BOOK DETAIL MODAL
+    ════════════════════════════════════════════════════════════════════ -->
+    <div id="bookModal" class="fixed inset-0 z-[100] hidden" role="dialog" aria-modal="true">
+        <!-- Backdrop -->
+        <div class="absolute inset-0 bg-gray-900/70 backdrop-blur-sm" onclick="closeModal()"></div>
+
+        <!-- Centering wrapper -->
+        <div class="relative flex items-center justify-center w-full h-full p-0 md:p-4">
+
+            <!-- Panel -->
+            <div id="bookModalPanel"
+                 class="modal-panel relative bg-white rounded-none md:rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row">
+
+                <!-- ── LEFT: Cover + actions ──────────────────────────── -->
+                <div class="w-full md:w-[380px] md:min-w-[380px] bg-gray-50 border-b md:border-b-0 md:border-r border-gray-100 flex flex-col overflow-y-auto custom-scrollbar">
+
+                    <!-- Mobile close -->
+                    <div class="md:hidden flex items-center justify-between px-5 pt-5 pb-3">
+                        <span id="modalCategoryMobile" class="text-[10px] font-black text-blue-600 uppercase tracking-widest"></span>
+                        <button onclick="closeModal()" class="w-9 h-9 flex items-center justify-center rounded-xl bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+
+                    <!-- Cover image -->
+                    <div class="px-6 pb-0 pt-0 md:pt-8">
+                        <div class="aspect-[3/4] rounded-2xl overflow-hidden shadow-xl group">
+                            <img id="modalImage" src="" alt=""
+                                 class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
+                        </div>
+                    </div>
+
+                    <!-- Book meta -->
+                    <div class="px-6 pt-5 pb-2 space-y-2">
+                        <span id="modalCategory" class="hidden md:inline-block text-[10px] font-black text-blue-600 uppercase tracking-[0.2em]"></span>
+                        <h3 id="modalTitle" class="text-2xl font-black text-gray-900 leading-tight"></h3>
+                        <p id="modalAuthor" class="text-gray-500 font-medium"></p>
+                        <div id="modalStars" class="flex items-center gap-1 py-2 border-y border-gray-100"></div>
+                        <!-- Price badge -->
+                        <div id="modalPriceBadge" class=""></div>
+                    </div>
+
+                    <!-- CTA buttons -->
+                    <div class="px-6 pb-6 pt-4 space-y-3 mt-auto">
+                        <button id="modalDownloadBtn"
+                                onclick="handleDownload(event, currentBookId, activeBookData && activeBookData.isPremium)"
+                                class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-2xl font-black text-sm transition-all shadow-lg shadow-blue-100 active:scale-95 flex items-center justify-center gap-2">
+                            <i class="fas fa-file-pdf"></i> Access Digital Edition
+                        </button>
+                        <button onclick="openReviewDrawer()"
+                                class="w-full bg-white border-2 border-gray-100 hover:bg-gray-50 text-gray-900 py-3.5 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2">
+                            <i class="fas fa-comments text-blue-500"></i> View Discussions
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ── RIGHT: Description + reviews ──────────────────── -->
+                <div class="flex-1 flex flex-col overflow-hidden">
+
+                    <!-- Header -->
+                    <div class="flex items-center justify-between px-8 pt-8 pb-5 border-b border-gray-50 flex-shrink-0">
+                        <h4 class="text-lg font-black text-gray-900 italic underline decoration-blue-400 underline-offset-8">Description</h4>
+                        <button onclick="closeModal()" class="hidden md:flex w-9 h-9 items-center justify-center rounded-xl hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+
+                    <!-- Scrollable content -->
+                    <div class="flex-1 overflow-y-auto custom-scrollbar px-8 py-6">
+                        <p id="modalDescription" class="text-gray-600 leading-relaxed text-sm mb-8"></p>
+
+                        <!-- Review previews -->
+                        <div class="flex justify-between items-center mb-4 pb-4 border-b border-gray-50">
+                            <h4 class="text-base font-black text-gray-900">Recent Insights</h4>
+                            <button onclick="openReviewDrawer()" class="text-blue-600 font-bold text-xs hover:underline">View All</button>
+                        </div>
+                        <div id="reviewPreviewFeed" class="space-y-4"></div>
+                    </div>
+                </div>
+
+            </div><!-- end #bookModalPanel -->
+        </div>
+    </div>
+
+
+    <!-- ════════════════════════════════════════════════════════════════════
+         REVIEW DRAWER
+    ════════════════════════════════════════════════════════════════════ -->
+    <div id="reviewDrawer" class="hidden fixed inset-0 z-[120] flex justify-end">
+        <div class="absolute inset-0 bg-black/25 backdrop-blur-[2px]" onclick="closeReviewDrawer()"></div>
+        <div id="drawerPanel"
+             class="relative w-full max-w-md bg-white h-screen shadow-2xl flex flex-col translate-x-full">
+
+            <!-- Drawer header -->
+            <div class="px-6 py-5 border-b border-gray-100 flex justify-between items-center flex-shrink-0 bg-white">
+                <div>
+                    <h3 class="text-lg font-black text-gray-900">Community Reviews</h3>
+                    <p id="reviewCount" class="text-xs font-bold text-blue-600 uppercase tracking-widest mt-0.5">0 Insights</p>
+                </div>
+                <button onclick="closeReviewDrawer()"
+                        class="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 text-gray-400 transition-colors">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <!-- Write review (collapsible) -->
+            <div id="writeReviewSection" class="overflow-hidden bg-gray-50 border-b border-gray-100 flex-shrink-0"
+                 style="max-height:0; transition: max-height 0.35s ease;">
+                <form id="reviewForm" class="p-6 space-y-4">
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">Your Rating</label>
+                        <div id="starInput" class="flex gap-2 text-2xl text-gray-200">
+                            <% [1,2,3,4,5].forEach(val => { %>
+                                <i class="fas fa-star cursor-pointer hover:text-yellow-400 transition-colors" data-value="<%= val %>"></i>
+                            <% }) %>
+                        </div>
+                        <input type="hidden" id="ratingValue" value="5">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">Your Thoughts</label>
+                        <textarea id="reviewComment" required rows="3" placeholder="Share your insight..."
+                                  class="w-full bg-white border border-gray-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all resize-none"></textarea>
+                    </div>
+                    <button type="submit"
+                            class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold text-sm transition-all">
+                        Post Insight
+                    </button>
+                </form>
+            </div>
+
+            <!-- Review list -->
+            <div class="flex-1 overflow-y-auto custom-scrollbar">
+                <div id="reviewListContent" class="p-6 space-y-5"></div>
+            </div>
+
+            <!-- Footer button -->
+            <div class="px-6 py-4 border-t border-gray-100 bg-white flex-shrink-0">
+                <button id="toggleReviewBtn" onclick="toggleReviewForm()"
+                        class="w-full bg-gray-900 hover:bg-blue-600 text-white py-3.5 rounded-2xl font-black text-sm transition-all">
+                    Write a Review
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ════════════════════════════════════════════════════════════════════
+         SCRIPTS
+    ════════════════════════════════════════════════════════════════════ -->
+    <script>
+    let currentBookId  = null;
+    let activeBookData = null;
+
+    // ── TOAST ───────────────────────────────────────────────────────────
+    function showToast(message, type = 'success') {
+        const colors = { success:'#2563eb', error:'#ef4444', warning:'#f59e0b', info:'#3b82f6' };
+        Toastify({
+            text: message, duration: 3000,
+            gravity: 'top', position: 'right',
+            style: { background: colors[type] || colors.info, borderRadius:'12px', fontWeight:'bold', fontSize:'13px' }
+        }).showToast();
+    }
+
+    // ── FILTERS ─────────────────────────────────────────────────────────
+    async function applyFilters() {
+        const sort       = document.getElementById('sortOrder').value;
+        const rating     = document.querySelector('input[name="minRating"]:checked')?.value || 0;
+        const categories = Array.from(document.querySelectorAll('input[name="category"]:checked')).map(el => el.value);
+        const params     = new URLSearchParams({ sort, rating, categories: categories.join(',') });
+        try {
+            const res  = await fetch(`/books/filter?${params}`, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+            const html = await res.text();
+            document.getElementById('bookGrid').innerHTML = html;
+        } catch(err) { showToast('Filtering failed', 'error'); }
+    }
+
+    // ── OPEN MODAL ──────────────────────────────────────────────────────
+    // Always fetches fresh data from server so reviews are never stale
+    async function openModal(book) {
+        currentBookId  = book._id;
+        // Seed with initial data immediately (fast render)
+        activeBookData = JSON.parse(JSON.stringify(book));
+        renderModalData(activeBookData);
+
+        document.getElementById('bookModal').classList.remove('hidden');
+        document.body.classList.add('overflow-hidden');
+
+        // Then fetch fresh data in the background to get latest reviews
+        try {
+            const res  = await fetch(`/books/${book._id}/data`, { credentials: 'include' });
+            if (res.ok) {
+                const fresh = await res.json();
+                if (fresh.success && fresh.book) {
+                    activeBookData = fresh.book;
+                    // Only update review section — don't flicker the whole modal
+                    renderReviewPreviews(activeBookData.reviews || []);
+                    // Update review count in stars
+                    const starContainer = document.getElementById('modalStars');
+                    const countSpan = starContainer.querySelector('span');
+                    if (countSpan) countSpan.textContent = `(${activeBookData.reviews ? activeBookData.reviews.length : 0} Reviews)`;
+                }
+            }
+        } catch(e) { /* silently fail — initial data already shown */ }
+    }
+
+    function renderModalData(book) {
+        document.getElementById('modalTitle').textContent       = book.title;
+        document.getElementById('modalAuthor').textContent      = `by ${book.author}`;
+        document.getElementById('modalCategory').textContent    = book.category;
+        document.getElementById('modalCategoryMobile').textContent = book.category;
+        document.getElementById('modalDescription').textContent = book.description || 'No description available.';
+        document.getElementById('modalImage').src               = book.image;
+
+        // Stars
+        const avg = Math.round(book.averageRating || 5);
+        let starHtml = '';
+        for (let i = 1; i <= 5; i++) {
+            starHtml += `<i class="fas fa-star text-sm ${i <= avg ? 'text-yellow-400' : 'text-gray-200'}"></i>`;
+        }
+        starHtml += `<span class="ml-2 text-xs font-bold text-gray-400">(${book.reviews ? book.reviews.length : 0} Reviews)</span>`;
+        document.getElementById('modalStars').innerHTML = starHtml;
+
+        // Price badge
+        const priceBadge = document.getElementById('modalPriceBadge');
+        if (book.price && book.price > 0) {
+            priceBadge.innerHTML = `<span class="inline-flex items-center gap-1 text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg">
+                <i class="fas fa-tag text-[10px]"></i> Worth $${parseFloat(book.price).toFixed(2)}
+            </span>`;
+        } else {
+            priceBadge.innerHTML = `<span class="inline-flex items-center text-xs font-bold text-blue-500 bg-blue-50 px-2.5 py-1 rounded-lg">Free</span>`;
+        }
+
+        // Premium badge on download button
+        const downloadBtn = document.getElementById('modalDownloadBtn');
+        if (book.isPremium) {
+            downloadBtn.innerHTML = `<i class="fas fa-crown text-amber-400"></i> Access Premium Edition`;
+            downloadBtn.className = downloadBtn.className.replace('bg-blue-600 hover:bg-blue-700', 'bg-gray-800 hover:bg-amber-500');
+        } else {
+            downloadBtn.innerHTML = `<i class="fas fa-file-pdf"></i> Access Digital Edition`;
+            downloadBtn.className = downloadBtn.className.replace('bg-gray-800 hover:bg-amber-500', 'bg-blue-600 hover:bg-blue-700');
+        }
+
+        // Render existing review previews
+        renderReviewPreviews(book.reviews || []);
+    }
+
+    function closeModal() {
+        document.getElementById('bookModal').classList.add('hidden');
+        document.body.classList.remove('overflow-hidden');
+        // Reset modal panel animation so it plays again next open
+        const panel = document.getElementById('bookModalPanel');
+        panel.classList.remove('modal-panel');
+        void panel.offsetWidth; // reflow
+        panel.classList.add('modal-panel');
+    }
+
+    // ── REVIEW DRAWER ───────────────────────────────────────────────────
+    function openReviewDrawer() {
+        document.getElementById('reviewDrawer').classList.remove('hidden');
+        setTimeout(() => document.getElementById('drawerPanel').classList.remove('translate-x-full'), 10);
+        renderReviews();
+    }
+
+    function closeReviewDrawer() {
+        document.getElementById('drawerPanel').classList.add('translate-x-full');
+        setTimeout(() => {
+            document.getElementById('reviewDrawer').classList.add('hidden');
+            document.getElementById('writeReviewSection').style.maxHeight = '0';
+            const btn = document.getElementById('toggleReviewBtn');
+            btn.textContent = 'Write a Review';
+            btn.classList.replace('bg-red-500','bg-gray-900');
+        }, 300);
+    }
+
+    // ── RENDER REVIEWS ──────────────────────────────────────────────────
+    function renderReviewPreviews(reviews) {
+        const container = document.getElementById('reviewPreviewFeed');
+        if (!reviews || reviews.length === 0) {
+            container.innerHTML = '<p class="text-gray-400 italic text-sm">No insights archived yet. Be the first!</p>';
+            return;
+        }
+        container.innerHTML = reviews.slice(0, 3).map(rev => `
+            <div class="bg-gray-50 p-4 rounded-2xl border border-gray-100 animate-fadeIn">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="font-bold text-xs text-gray-900">${rev.userName || 'Vault Member'}</span>
+                    <span class="text-yellow-400 text-xs">${'★'.repeat(Math.min(rev.rating, 5))}</span>
+                </div>
+                <p class="text-gray-500 text-xs leading-relaxed line-clamp-2">"${rev.comment}"</p>
+            </div>
+        `).join('');
+    }
+
+    function renderReviews() {
+        const content = document.getElementById('reviewListContent');
+        const reviews = activeBookData?.reviews || [];
+        document.getElementById('reviewCount').textContent = `${reviews.length} Insight${reviews.length !== 1 ? 's' : ''}`;
+        if (reviews.length === 0) {
+            content.innerHTML = `<div class="text-center py-12"><i class="far fa-comment-dots text-3xl text-gray-200 mb-3 block"></i><p class="text-gray-400 text-sm">No reviews yet.</p></div>`;
+            return;
+        }
+        content.innerHTML = reviews.map(rev => `
+            <div class="pb-5 border-b border-gray-50 last:border-0 animate-fadeIn">
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="font-bold text-gray-900 text-sm">${rev.userName || 'Vault Member'}</span>
+                    <div class="flex text-amber-400 text-xs gap-0.5">
+                        ${Array(Math.min(parseInt(rev.rating), 5)).fill('<i class="fas fa-star"></i>').join('')}
+                    </div>
+                </div>
+                <p class="text-gray-500 text-sm italic leading-relaxed">"${rev.comment}"</p>
+            </div>
+        `).join('');
+    }
+
+    function toggleReviewForm() {
+        const section = document.getElementById('writeReviewSection');
+        const btn     = document.getElementById('toggleReviewBtn');
+        const isOpen  = section.style.maxHeight && section.style.maxHeight !== '0px';
+        if (isOpen) {
+            section.style.maxHeight = '0px';
+            btn.textContent = 'Write a Review';
+            btn.classList.replace('bg-red-500','bg-gray-900');
+        } else {
+            section.style.maxHeight = section.scrollHeight + 'px';
+            btn.textContent = 'Cancel';
+            btn.classList.replace('bg-gray-900','bg-red-500');
+        }
+    }
+
+    // ── SUBMIT REVIEW ────────────────────────────────────────────────────
+    // After posting, fetches fresh book data so reviews persist across re-opens
+    document.getElementById('reviewForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const comment = document.getElementById('reviewComment').value.trim();
+        const rating  = document.getElementById('ratingValue').value;
+
+        if (!comment) return showToast('Please write something first', 'warning');
+
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Posting...';
+
+        try {
+            const res    = await fetch(`/books/review/${currentBookId}`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ comment, rating })
+            });
+            const result = await res.json();
+
+            if (res.ok && result.success) {
+                showToast('Insight published!', 'success');
+                e.target.reset();
+                resetStars();
+                toggleReviewForm();
+
+                // Add the new review to local data immediately
+                if (!activeBookData.reviews) activeBookData.reviews = [];
+                activeBookData.reviews.unshift(result.newReview || result.review);
+
+                // Re-render both views with the updated local data
+                renderReviews();
+                renderReviewPreviews(activeBookData.reviews);
+
+                // Update star count in modal header
+                const countSpan = document.querySelector('#modalStars span');
+                if (countSpan) countSpan.textContent = `(${activeBookData.reviews.length} Reviews)`;
+
+                // ── KEY FIX: also refresh the book object in the page's EJS-rendered
+                //   JSON so the NEXT openModal() call has the latest reviews too.
+                //   We do this by updating the onclick attribute of the matching card.
+                const card = document.getElementById(`book-card-${currentBookId}`);
+                if (card) {
+                    // Patch the card's onclick with updated book data
+                    card.setAttribute('onclick', `openModal(${JSON.stringify(activeBookData)})`);
+                }
+
+            } else {
+                showToast(result.message || 'Could not post review', 'error');
+            }
+        } catch(err) {
+            showToast('Connection error', 'error');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Post Insight';
+        }
+    });
+
+    // ── STAR INPUT ──────────────────────────────────────────────────────
+    function resetStars() {
+        document.getElementById('ratingValue').value = '5';
+        document.querySelectorAll('#starInput i').forEach((s, i) => {
+            s.classList.toggle('text-yellow-400', i < 5);
+            s.classList.toggle('text-gray-200', i >= 5);
+        });
+    }
+
+    document.querySelectorAll('#starInput i').forEach(star => {
+        star.addEventListener('click', function () {
+            const val = parseInt(this.dataset.value);
+            document.getElementById('ratingValue').value = val;
+            document.querySelectorAll('#starInput i').forEach((s, i) => {
+                s.classList.toggle('text-yellow-400', i < val);
+                s.classList.toggle('text-gray-200', i >= val);
+            });
+        });
+        // Hover preview
+        star.addEventListener('mouseenter', function () {
+            const val = parseInt(this.dataset.value);
+            document.querySelectorAll('#starInput i').forEach((s, i) => {
+                s.classList.toggle('text-yellow-300', i < val);
+            });
+        });
+        star.addEventListener('mouseleave', function () {
+            const current = parseInt(document.getElementById('ratingValue').value);
+            document.querySelectorAll('#starInput i').forEach((s, i) => {
+                s.classList.remove('text-yellow-300');
+                s.classList.toggle('text-yellow-400', i < current);
+                s.classList.toggle('text-gray-200', i >= current);
+            });
+        });
+    });
+
+    // ── KEYBOARD ────────────────────────────────────────────────────────
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') { closeModal(); closeReviewDrawer(); }
+    });
+    </script>
+</body>
+</html>

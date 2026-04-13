@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <%- include('../partials/head', { title: post.title + ' | BookVault' }) %>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        @keyframes fadeIn { from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)} }
+        .reply-item { animation: fadeIn .3s ease forwards; }
+        @keyframes starPulse { 0%,100%{opacity:1}50%{opacity:.5} }
+        .star-pulse { animation: starPulse 1.8s ease infinite; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen flex flex-col">
+    <%- include('../partials/navbar') %>
+
+    <!-- Super community banner -->
+    <% if (community.isSuper) { %>
+    <div style="background:linear-gradient(135deg,#1c1c28,#1e1b4b,#27272a)" class="px-6 py-3">
+        <div class="max-w-4xl mx-auto flex items-center gap-2 text-xs">
+            <i class="fas fa-star text-amber-400 star-pulse"></i>
+            <span class="font-black text-amber-400 uppercase tracking-widest">Super Community</span>
+            <span class="text-slate-500 mx-2">·</span>
+            <span class="text-slate-400"><%= community.name %></span>
+        </div>
+    </div>
+    <% } %>
+
+    <main class="flex-grow pb-20">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 pt-10">
+
+            <!-- Back link -->
+            <a href="/communities/<%= community._id %>"
+               class="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-indigo-600 transition-colors mb-8">
+                <i class="fas fa-arrow-left"></i> Back to <%= community.name %>
+            </a>
+
+            <!-- ── ORIGINAL POST ─────────────────────────────────────── -->
+            <article class="bg-white rounded-3xl p-8 md:p-10 border border-slate-100 shadow-sm mb-8">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-10 h-10 rounded-xl flex items-center justify-center font-black text-white text-sm flex-shrink-0"
+                         style="background:hsl(<%= Math.abs(post.author.username.charCodeAt(0)*137)%360 %>,60%,50%)">
+                        <%= post.author.username.charAt(0).toUpperCase() %>
+                    </div>
+                    <div>
+                        <p class="font-black text-sm text-slate-900 flex items-center gap-2">
+                            <%= post.author.username %>
+                            <% if (community.isSuper) { %>
+                                <span class="px-2 py-0.5 rounded-lg text-[10px] font-black bg-amber-100 text-amber-700">
+                                    <i class="fas fa-star text-[9px]"></i> Premium Post
+                                </span>
+                            <% } %>
+                        </p>
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                            Original Poster · <%= new Date(post.createdAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) %>
+                        </p>
+                    </div>
+                </div>
+                <h1 class="text-2xl md:text-3xl font-black text-slate-900 leading-tight mb-4"><%= post.title %></h1>
+                <div class="text-slate-600 leading-relaxed whitespace-pre-line text-sm md:text-base"><%= post.content %></div>
+            </article>
+
+            <!-- ── REPLY FORM ────────────────────────────────────────── -->
+            <% const canReply = locals.user && (!community.isSuper || user.isPremium || user.role === 'admin'); %>
+
+            <% if (canReply) { %>
+            <div class="bg-blue-50/60 rounded-3xl p-6 md:p-8 mb-10 border border-blue-100">
+                <div class="flex items-center gap-2 mb-4">
+                    <div class="w-8 h-8 rounded-xl flex items-center justify-center text-white text-xs font-black flex-shrink-0" style="background:#2563eb">
+                        <%= user.username.charAt(0).toUpperCase() %>
+                    </div>
+                    <span class="text-xs font-black text-slate-500 uppercase tracking-wider"><%= user.username %></span>
+                    <% if (community.isSuper) { %>
+                        <span class="ml-auto flex items-center gap-1 text-[10px] font-black text-amber-600 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-100">
+                            <i class="fas fa-star text-amber-400 text-[9px]"></i>
+                            <%= user.role === 'admin' ? 'Admin' : 'Premium' %>
+                        </span>
+                    <% } %>
+                </div>
+                <form action="/communities/posts/<%= post._id %>/replies" method="POST" class="space-y-3">
+                    <textarea name="text" required rows="3" placeholder="Share your thoughts..."
+                              class="w-full px-5 py-4 bg-white border-none rounded-2xl text-sm font-medium text-slate-700 shadow-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none"></textarea>
+                    <div class="flex justify-end">
+                        <button type="submit"
+                                class="px-7 py-3 rounded-2xl font-black text-white text-sm shadow-lg transition-all active:scale-95"
+                                style="background:#2563eb">
+                            Post Reply
+                        </button>
+                    </div>
+                </form>
+            </div>
+            <% } else if (community.isSuper && locals.user) { %>
+            <div class="rounded-3xl p-6 mb-10 flex items-center gap-4" style="background:#fffbeb;border:1px solid #fde68a">
+                <i class="fas fa-lock text-amber-500 text-xl flex-shrink-0"></i>
+                <div>
+                    <p class="font-black text-amber-800 text-sm">Premium members can reply in this Super Community</p>
+                    <p class="text-amber-700 text-xs mt-0.5">You can read all discussions. <a href="/premium" class="underline font-bold">Upgrade to reply →</a></p>
+                </div>
+            </div>
+            <% } else if (!locals.user) { %>
+            <div class="rounded-3xl p-6 mb-10 flex items-center gap-4" style="background:#eff6ff;border:1px solid #bfdbfe">
+                <i class="fas fa-sign-in-alt text-blue-500 text-xl flex-shrink-0"></i>
+                <div>
+                    <p class="font-black text-blue-800 text-sm">Log in to join the conversation</p>
+                    <a href="/login" class="text-blue-600 text-xs font-bold underline">Sign in →</a>
+                </div>
+            </div>
+            <% } %>
+
+            <!-- ── REPLIES ────────────────────────────────────────────── -->
+            <div>
+                <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-5 flex items-center gap-2">
+                    <i class="far fa-comment-dots text-indigo-400"></i>
+                    <span id="replyCountLabel"><%= post.replies.length %> Repl<%= post.replies.length !== 1 ? 'ies' : 'y' %></span>
+                </h3>
+
+                <div id="repliesList" class="space-y-4">
+                    <% if (post.replies && post.replies.length > 0) { %>
+                        <% [...post.replies].reverse().forEach(reply => { %>
+                        <div id="reply-<%= reply._id %>" class="reply-item bg-white rounded-2xl border border-slate-100 shadow-sm p-6 relative group">
+                            <div class="flex items-start gap-4">
+                                <!-- Avatar -->
+                                <div class="w-9 h-9 rounded-xl flex items-center justify-center font-black text-white text-sm flex-shrink-0"
+                                     style="background:hsl(<%= Math.abs(reply.userName.charCodeAt(0)*97)%360 %>,55%,50%)">
+                                    <%= reply.userName.charAt(0).toUpperCase() %>
+                                </div>
+
+                                <!-- Content -->
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center justify-between gap-2 mb-2">
+                                        <div class="flex items-center gap-2 flex-wrap">
+                                            <span class="text-sm font-black text-slate-900"><%= reply.userName %></span>
+                                            <% if (community.isSuper) { %>
+                                                <span class="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-600">
+                                                    <i class="fas fa-star text-[8px]"></i> Premium
+                                                </span>
+                                            <% } %>
+                                        </div>
+                                        <div class="flex items-center gap-2 flex-shrink-0">
+                                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
+                                                <%= new Date(reply.createdAt).toLocaleDateString('en-US',{month:'short',day:'numeric'}) %>
+                                            </span>
+
+                                            <!-- Delete button: own reply or admin -->
+                                            <% const isReplyAuthor = locals.user && reply.userId && reply.userId.toString() === user._id.toString(); %>
+                                            <% const isAdmin = locals.user && user.role === 'admin'; %>
+                                            <% if (isReplyAuthor || isAdmin) { %>
+                                            <button onclick="deleteReply('<%= post._id %>', '<%= reply._id %>')"
+                                                    title="Delete reply"
+                                                    class="w-7 h-7 rounded-lg flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100">
+                                                <i class="fas fa-trash text-[10px]"></i>
+                                            </button>
+                                            <% } %>
+                                        </div>
+                                    </div>
+                                    <p class="text-slate-600 text-sm leading-relaxed"><%= reply.text %></p>
+                                </div>
+                            </div>
+                        </div>
+                        <% }) %>
+                    <% } else { %>
+                        <div id="emptyReplies" class="text-center py-14 bg-white rounded-2xl border-2 border-dashed border-slate-100">
+                            <i class="far fa-comment-dots text-3xl text-slate-200 mb-3 block"></i>
+                            <p class="text-sm font-bold text-slate-400">No replies yet. Be the first!</p>
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <%- include('../partials/footer') %>
+
+    <script>
+    async function deleteReply(postId, replyId) {
+        const result = await Swal.fire({
+            title: 'Delete this reply?',
+            text: 'This cannot be undone.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Delete',
+            confirmButtonColor: '#ef4444',
+            cancelButtonText: 'Cancel'
+        });
+
+        if (!result.isConfirmed) return;
+
+        try {
+            const res  = await fetch(`/communities/posts/${postId}/replies/${replyId}`, {
+                method: 'DELETE',
+                credentials: 'include'
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                // Animate out
+                const el = document.getElementById(`reply-${replyId}`);
+                if (el) {
+                    el.style.transition = 'all .3s ease';
+                    el.style.opacity    = '0';
+                    el.style.transform  = 'translateX(20px)';
+                    setTimeout(() => {
+                        el.remove();
+                        // Update count label
+                        const remaining = document.querySelectorAll('[id^="reply-"]').length;
+                        const label = document.getElementById('replyCountLabel');
+                        if (label) label.textContent = `${remaining} Repl${remaining !== 1 ? 'ies' : 'y'}`;
+                        // Show empty state if no replies left
+                        if (remaining === 0) {
+                            document.getElementById('repliesList').innerHTML = `
+                                <div class="text-center py-14 bg-white rounded-2xl border-2 border-dashed border-slate-100">
+                                    <i class="far fa-comment-dots text-3xl text-slate-200 mb-3 block"></i>
+                                    <p class="text-sm font-bold text-slate-400">No replies yet.</p>
+                                </div>`;
+                        }
+                    }, 300);
+                }
+            } else {
+                Swal.fire({ icon:'error', title:'Failed', text: data.message || 'Could not delete reply' });
+            }
+        } catch(err) {
+            Swal.fire({ icon:'error', title:'Network Error', text:'Please try again.' });
+        }
+    }
+    </script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+<%- include('partials/head') %>
+
+<main class="min-h-screen bg-slate-50 pt-32 pb-12 px-6">
+    <div class="max-w-3xl mx-auto">
+        <a href="/" class="inline-flex items-center gap-2 text-[11px] font-black text-slate-400 hover:text-blue-600 transition-all uppercase tracking-[0.2em] mb-8 group">
+            <i class="fas fa-arrow-left transition-transform group-hover:-translate-x-1"></i>
+            Back to Home
+        </a>
+
+        <div class="bg-white rounded-[2.5rem] p-10 shadow-xl shadow-slate-200/50 border border-slate-100">
+            <h1 class="text-3xl font-black text-slate-900 tracking-tighter uppercase italic mb-8">
+                Privacy <span class="text-blue-600">Policy</span>
+            </h1>
+            
+            <div class="prose prose-slate max-w-none space-y-6 text-slate-600 font-medium leading-relaxed">
+                <section>
+                    <h2 class="text-slate-900 font-black uppercase tracking-widest text-xs mb-3">1. Data Collection</h2>
+                    <p>At BookVault, we collect your email and username to provide personalized library management. We never sell your data to third parties.</p>
+                </section>
+
+                <section>
+                    <h2 class="text-slate-900 font-black uppercase tracking-widest text-xs mb-3">2. Authentication</h2>
+                    <p>We use secure JWT tokens stored in cookies to keep you logged in. These tokens are encrypted and cleared upon logout.</p>
+                </section>
+            </div>
+        </div>
+    </div>
+</main>
+
+<%- include('partials/footer') %>

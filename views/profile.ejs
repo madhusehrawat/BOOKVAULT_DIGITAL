@@ -1,0 +1,137 @@
+<%- include('partials/head') %>
+
+<main class="min-h-screen bg-slate-50 pt-24 pb-12 px-6">
+    <div class="max-w-3xl mx-auto">
+        
+        <a href="/books" class="inline-flex items-center gap-2 text-[11px] font-black text-slate-400 hover:text-blue-600 transition-colors uppercase tracking-[0.2em] mb-8 group">
+            <i class="fas fa-arrow-left transition-transform group-hover:-translate-x-1"></i>
+            Back to Library
+        </a>
+
+        <div class="bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
+            <div class="h-40 bg-gradient-to-r from-blue-600 to-blue-700 relative">
+                <div class="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
+            </div>
+
+            <div class="px-8 pb-10">
+                <div class="relative -top-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
+                    <div class="flex items-end gap-6">
+                        <div class="w-28 h-28 rounded-3xl bg-slate-900 border-[6px] border-white flex items-center justify-center text-white text-4xl font-black shadow-2xl">
+                            <%= user.username.charAt(0).toUpperCase() %>
+                        </div>
+                        <div class="pb-2">
+                            <h1 class="text-3xl font-black text-slate-900 tracking-tighter uppercase italic leading-none mb-1">
+                                <%= user.username %>
+                            </h1>
+                            <p class="text-slate-400 font-bold text-sm tracking-tight"><%= user.email %></p>
+                        </div>
+                    </div>
+
+                    <button onclick="openEditModal()" class="mb-2 px-6 py-3 bg-slate-50 hover:bg-slate-100 text-slate-900 text-[10px] font-black uppercase tracking-widest rounded-xl border border-slate-200 transition-all active:scale-95">
+                        Edit Profile
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                    <div class="p-6 bg-slate-50/50 rounded-2xl border border-slate-100 flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center">
+                            <i class="fas fa-user-shield text-sm"></i>
+                        </div>
+                        <div>
+                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Account Role</p>
+                            <p class="font-bold text-slate-900"><%= user.role.toUpperCase() %></p>
+                        </div>
+                    </div>
+
+                    <div class="p-6 bg-slate-50/50 rounded-2xl border border-slate-100 flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center">
+                            <i class="fas fa-crown text-sm"></i>
+                        </div>
+                        <div>
+                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Membership</p>
+                            <p class="font-bold text-slate-900">
+                                <%= user.isPremium ? 'PRO MEMBER' : 'STANDARD READER' %>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<div id="editModal" class="fixed inset-0 z-[110] hidden">
+    <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onclick="closeEditModal()"></div>
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md px-4">
+        <div class="bg-white rounded-[2.5rem] shadow-2xl border border-slate-100 overflow-hidden">
+            <div class="p-8">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-black text-slate-900 uppercase tracking-tight italic">Edit <span class="text-blue-600">Profile</span></h2>
+                    <button onclick="closeEditModal()" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 transition-colors">
+                        <i class="fas fa-times text-slate-400"></i>
+                    </button>
+                </div>
+
+                <form id="editProfileForm" class="space-y-5">
+                    <div>
+                        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 ml-1">Username</label>
+                        <input type="text" id="editUsername" value="<%= user.username %>" 
+                               class="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all font-bold text-slate-900">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 ml-1">Email Address</label>
+                        <input type="email" id="editEmail" value="<%= user.email %>" 
+                               class="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all font-bold text-slate-900">
+                    </div>
+                    <div class="pt-2 flex gap-3">
+                        <button type="button" onclick="closeEditModal()" class="flex-1 px-6 py-4 bg-slate-100 text-slate-600 text-[11px] font-black uppercase tracking-widest rounded-2xl hover:bg-slate-200 transition-all">Cancel</button>
+                        <button type="submit" class="flex-1 px-6 py-4 bg-slate-900 text-white text-[11px] font-black uppercase tracking-widest rounded-2xl hover:bg-blue-600 shadow-lg shadow-blue-200 transition-all active:scale-95">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const modal = document.getElementById('editModal');
+const editForm = document.getElementById('editProfileForm');
+
+function openEditModal() {
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeEditModal() {
+    modal.classList.add('hidden');
+    document.body.style.overflow = 'auto';
+}
+
+editForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const data = {
+        username: document.getElementById('editUsername').value,
+        email: document.getElementById('editEmail').value
+    };
+
+    try {
+        const response = await fetch('/profile/update', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+        if (response.ok) {
+            window.location.reload();
+        } else {
+            alert(result.message || 'Update failed');
+        }
+    } catch (err) {
+        alert('Something went wrong. Please try again.');
+    }
+});
+</script>
+
+<%- include('partials/footer') %>
