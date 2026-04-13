@@ -1,23 +1,21 @@
 const express = require('express');
-const router = express.Router();
+const router  = express.Router();
 const bookController = require('../controllers/bookController');
 const { requireAuth, requirePremium } = require('../middleware/authMiddleware');
-const { uploadImage } = require('../config/cloudinary'); // ← Cloudinary
+const { uploadFields } = require('../config/cloudinary');
 
-// ─── Static / specific routes (must come before /:id dynamic routes) ─────────
+// ─── Static / specific routes (BEFORE /:id) ──────────────────────────────────
 router.get('/download-library', requireAuth, requirePremium, bookController.downloadLibraryPDF);
 router.get('/my-library',       requireAuth, bookController.getMyLibrary);
 router.get('/filter',           bookController.getAllBooks);
 router.get('/',                 bookController.getAllBooks);
 
-// Admin: add book — cover image uploaded to Cloudinary, PDF handled separately
+// Admin: add book — image + PDF both uploaded to Cloudinary in one request
 router.post(
     '/add',
     requireAuth,
     (req, res, next) => {
-        // Upload cover image to Cloudinary; pdf is NOT uploaded here —
-        // admin uploads PDF separately via /admin/books/:id/upload-pdf
-        uploadImage.single('bookImage')(req, res, (err) => {
+        uploadFields(req, res, (err) => {
             if (err) return res.status(400).json({ success: false, message: err.message });
             next();
         });

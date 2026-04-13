@@ -1,22 +1,7 @@
 const User      = require('../models/User');
 const Book      = require('../models/Book');
 const Community = require('../models/Community');
-const path      = require('path');
-const fs        = require('fs');
-const { cloudinary } = require('../config/cloudinary');
-
-// ── Helper: extract Cloudinary public_id from a URL ───────────────────────
-// URL format: https://res.cloudinary.com/CLOUD/raw/upload/v123/bookvault/pdfs/name.pdf
-function extractPublicId(url) {
-    try {
-        const parts = url.split('/upload/');
-        if (parts.length < 2) return null;
-        // Remove version prefix (v1234567890/) if present
-        return parts[1].replace(/^v\d+\//, '');
-    } catch {
-        return null;
-    }
-}
+const { cloudinary, extractPublicId } = require('../config/cloudinary');
 
 // GET /admin/dashboard
 exports.getDashboard = async (req, res) => {
@@ -26,13 +11,11 @@ exports.getDashboard = async (req, res) => {
             User.find().select('-password').sort({ createdAt: -1 }),
             Community.find().populate('members', '_id').sort({ createdAt: -1 })
         ]);
-
         const stats = {
             userCount:      users.filter(u => u.role !== 'admin').length,
             communityCount: communities.length,
             recentCircles:  communities
         };
-
         res.render('admin/dashboard', { books, users, stats, user: req.user });
     } catch (err) {
         console.error('Dashboard error:', err);
@@ -68,36 +51,26 @@ exports.updateBook = async (req, res) => {
 };
 
 // POST /admin/books/:id/upload-pdf
-// multer-storage-cloudinary puts the permanent HTTPS URL in req.file.path
+// multer-storage-cloudinary sets req.file.path = permanent Cloudinary HTTPS URL
 exports.uploadBookPdf = async (req, res) => {
     try {
-        if (!req.file) {
-            return res.status(400).json({ success: false, message: 'No PDF file received' });
-        }
+        if (!req.file) return res.status(400).json({ success: false, message: 'No PDF file received' });
 
         const book = await Book.findById(req.params.id);
         if (!book) return res.status(404).json({ success: false, message: 'Book not found' });
 
-        // Delete old PDF from Cloudinary if it exists
+        // Delete old PDF from Cloudinary if present
         if (book.pdfPath && book.pdfPath.startsWith('http')) {
             const publicId = extractPublicId(book.pdfPath);
             if (publicId) {
-                try {
-                    await cloudinary.uploader.destroy(publicId, { resource_type: 'raw' });
-                } catch (e) {
-                    console.warn('Could not delete old Cloudinary PDF:', e.message);
-                }
+                try { await cloudinary.uploader.destroy(publicId, { resource_type: 'raw' }); }
+                catch (e) { console.warn('Old PDF delete warning:', e.message); }
             }
-        } else if (book.pdfPath) {
-            // Legacy: delete from local disk if it was stored locally
-            const localPath = path.join(__dirname, '..', 'public', book.pdfPath.replace(/^\/+/, ''));
-            if (fs.existsSync(localPath)) fs.unlinkSync(localPath);
         }
 
-        // req.file.path = permanent Cloudinary HTTPS URL
+        // Save the Cloudinary URL directly
         book.pdfPath = req.file.path;
         await book.save();
-
         res.json({ success: true, pdfPath: book.pdfPath });
     } catch (err) {
         console.error('uploadBookPdf error:', err);
@@ -111,28 +84,17 @@ exports.deleteBookPdf = async (req, res) => {
         const book = await Book.findById(req.params.id);
         if (!book) return res.status(404).json({ success: false, message: 'Book not found' });
 
-        if (book.pdfPath) {
-            if (book.pdfPath.startsWith('http')) {
-                // Delete from Cloudinary
-                const publicId = extractPublicId(book.pdfPath);
-                if (publicId) {
-                    try {
-                        await cloudinary.uploader.destroy(publicId, { resource_type: 'raw' });
-                    } catch (e) {
-                        console.warn('Could not delete PDF from Cloudinary:', e.message);
-                    }
-                }
-            } else {
-                // Legacy: delete from local disk
-                const localPath = path.join(__dirname, '..', 'public', book.pdfPath.replace(/^\/+/, ''));
-                if (fs.existsSync(localPath)) fs.unlinkSync(localPath);
+        if (book.pdfPath && book.pdfPath.startsWith('http')) {
+            const publicId = extractPublicId(book.pdfPath);
+            if (publicId) {
+                try { await cloudinary.uploader.destroy(publicId, { resource_type: 'raw' }); }
+                catch (e) { console.warn('Cloudinary PDF delete warning:', e.message); }
             }
         }
 
         await Book.findByIdAndUpdate(req.params.id, { $unset: { pdfPath: '' } });
         res.json({ success: true });
     } catch (err) {
-        console.error('deleteBookPdf error:', err);
         res.status(500).json({ success: false, message: err.message });
     }
 };
@@ -166,7 +128,6 @@ exports.updateCircle = async (req, res) => {
         if (name)        update.name        = name;
         if (category)    update.category    = category;
         if (description) update.description = description;
-
         const community = await Community.findByIdAndUpdate(req.params.id, update, { new: true });
         if (!community) return res.status(404).json({ success: false, message: 'Community not found' });
         res.json({ success: true, community });
@@ -183,9 +144,7 @@ exports.createSuperCommunity = async (req, res) => {
             return res.status(400).json({ success: false, message: 'All fields required' });
         }
         const community = new Community({
-            name,
-            category,
-            description,
+            name, category, description,
             isSuper:   true,
             members:   [req.user._id],
             createdBy: req.user._id
