@@ -1,8 +1,4 @@
-/* ==========================================
-   FullStack Café - Service Worker (Final)
-   ========================================== */
 
-// 1. Push Event: Receives data from the server
 self.addEventListener("push", (event) => {
     let data = {
         title: "FullStack Café ☕",
@@ -11,12 +7,9 @@ self.addEventListener("push", (event) => {
 
     if (event.data) {
         try {
-            // Attempt to parse JSON from the server payload
             const payload = event.data.json();
             data = { ...data, ...payload }; 
         } catch (e) {
-            // FALLBACK: If JSON parsing fails (like your "Unexpected token T" error)
-            // treat the data as plain text to prevent the notification from breaking.
             console.warn("Push payload was not JSON, using text as body.");
             data.body = event.data.text();
         }
@@ -26,11 +19,9 @@ self.addEventListener("push", (event) => {
         body: data.body,
         icon: "/icons/favicon.png", 
         badge: "/icons/favicon.png",
-        
-        // Pattern: [vibrate, pause, vibrate] - unique rhythmic feel
+       
         vibrate: [300, 100, 400], 
         
-        // Use a unique tag so status updates replace each other instead of stacking
         tag: "order-status", 
         renotify: true, // Wake up the device even if a notification is already visible
         

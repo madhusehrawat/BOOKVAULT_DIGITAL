@@ -74,10 +74,8 @@
         .cta-btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
         .cta-btn:active { transform: scale(.97); }
 
-        /* Comparison table */
         .comp-row:nth-child(even) { background: rgba(241,245,249,.6); }
 
-        /* FAQ accordion */
         .faq-answer { max-height: 0; overflow: hidden; transition: max-height .35s ease; }
         .faq-item.open .faq-answer { max-height: 300px; }
         .faq-item.open .faq-icon { transform: rotate(45deg); }
@@ -96,13 +94,10 @@
 <body>
     <%- include('./partials/navbar') %>
 
-    <!-- ── HERO ───────────────────────────────────────────────────────────── -->
     <section class="hero-bg pt-20 pb-32 px-6 text-center relative overflow-hidden">
-        <!-- Decorative orbs -->
         <div style="width:500px;height:500px;background:radial-gradient(circle,rgba(245,158,11,.15),transparent 70%);position:absolute;top:-150px;left:50%;transform:translateX(-50%);pointer-events:none;"></div>
 
         <% if (locals.user && user.isPremium) { %>
-            <!-- Already premium state -->
             <div class="fade-up max-w-2xl mx-auto">
                 <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6 text-xs font-black uppercase tracking-widest" style="background:rgba(245,158,11,.15);color:var(--gold)">
                     <i class="fas fa-crown"></i> Active Premium Member
@@ -130,7 +125,6 @@
                 </a>
             </div>
         <% } else { %>
-            <!-- Non-premium state -->
             <div class="fade-up max-w-3xl mx-auto">
                 <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6 text-xs font-black uppercase tracking-widest" style="background:rgba(245,158,11,.15);color:var(--gold)">
                     <i class="fas fa-lock-open"></i> Unlock Full Access
@@ -159,12 +153,11 @@
         <% } %>
     </section>
 
-    <!-- ── PLANS ──────────────────────────────────────────────────────────── -->
+   
     <% if (!(locals.user && user.isPremium)) { %>
     <section id="plans" class="max-w-6xl mx-auto px-6 -mt-16 pb-20">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
 
-            <!-- ── MONTHLY ── -->
             <div id="card-monthly" class="plan-card bg-white rounded-3xl border-2 p-8 fade-up delay-1"
                  style="border-color:var(--border)"
                  onclick="selectPlan('monthly')">
@@ -203,7 +196,7 @@
                 </button>
             </div>
 
-            <!-- ── ANNUAL (POPULAR) ── -->
+            
             <div id="card-annual" class="plan-card bg-white rounded-3xl border-2 p-8 fade-up delay-2"
                  style="border-color:var(--gold);margin-top:-12px"
                  onclick="selectPlan('annual')">
@@ -249,7 +242,7 @@
                 </button>
             </div>
 
-            <!-- ── LIFETIME ── -->
+           
             <div id="card-lifetime" class="plan-card rounded-3xl border-2 p-8 fade-up delay-3"
                  style="background:var(--ink2);border-color:#334155"
                  onclick="selectPlan('lifetime')">
@@ -290,7 +283,6 @@
         </div>
     </section>
 
-    <!-- ── FEATURE COMPARISON TABLE ──────────────────────────────────────── -->
     <section class="max-w-4xl mx-auto px-6 pb-20">
         <h2 class="syne text-3xl font-extrabold text-center mb-10" style="color:var(--ink)">Full Feature Comparison</h2>
         <div class="bg-white rounded-3xl border overflow-hidden shadow-sm" style="border-color:var(--border)">
@@ -329,7 +321,6 @@
         </div>
     </section>
 
-    <!-- ── FAQ ────────────────────────────────────────────────────────────── -->
     <section class="max-w-3xl mx-auto px-6 pb-24">
         <h2 class="syne text-3xl font-extrabold text-center mb-10" style="color:var(--ink)">Frequently Asked</h2>
         <div class="space-y-3">
@@ -356,9 +347,6 @@
 
     <%- include('./partials/footer') %>
 
-    <!-- ══════════════════════════════════════════════════════════════════════
-         PURCHASE CONFIRMATION MODAL
-    ══════════════════════════════════════════════════════════════════════ -->
     <div id="purchaseModal" style="display:none" class="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
         <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden" id="purchaseModalContent">
             <div class="px-8 py-6" style="background:var(--ink2)">
@@ -436,40 +424,34 @@
             document.getElementById('plans').scrollIntoView({ behavior: 'smooth' });
         }
 
-        // ── PLAN SELECTION ─────────────────────────────────────────────────
+    
         function selectPlan(planKey) {
-            // Deselect all
+           
             ['monthly','annual','lifetime'].forEach(k => {
                 const card = document.getElementById(`card-${k}`);
                 if (card) card.classList.remove('selected');
             });
 
-            // Select chosen
             const card = document.getElementById(`card-${planKey}`);
             if (card) card.classList.add('selected');
 
             selectedPlan = planKey;
 
-            // Populate modal
             const p = plans[planKey];
             document.getElementById('modalPlanName').textContent  = p.name;
             document.getElementById('modalPlanDesc').textContent  = p.desc;
             document.getElementById('modalPlanPrice').textContent = p.price;
 
-            // Show modal
             document.getElementById('purchaseModal').style.display = 'flex';
         }
 
         function closePurchaseModal() {
             document.getElementById('purchaseModal').style.display = 'none';
         }
-
-        // Close on backdrop click
         document.getElementById('purchaseModal').addEventListener('click', function(e) {
             if (e.target === this) closePurchaseModal();
         });
 
-        // ── CARD FORMATTERS ────────────────────────────────────────────────
         function formatCard(el) {
             let v = el.value.replace(/\D/g, '').substring(0, 16);
             el.value = v.replace(/(.{4})/g, '$1 ').trim();
@@ -480,14 +462,13 @@
             el.value = v;
         }
 
-        // ── PURCHASE ───────────────────────────────────────────────────────
         async function confirmPurchase() {
             const card   = document.getElementById('cardNumber').value.replace(/\s/g,'');
             const expiry = document.getElementById('cardExpiry').value;
             const cvv    = document.getElementById('cardCvv').value;
             const name   = document.getElementById('cardName').value.trim();
 
-            // Basic validation
+           
             if (card.length < 16)   return shake('cardNumber',  'Enter a valid 16-digit card number');
             if (expiry.length < 5)  return shake('cardExpiry',  'Enter expiry as MM/YY');
             if (cvv.length < 3)     return shake('cardCvv',     'Enter 3-digit CVV');
@@ -535,7 +516,7 @@
             }
         }
 
-        // Shake + highlight invalid field
+       
         function shake(fieldId, msg) {
             const el = document.getElementById(fieldId);
             el.style.borderColor = '#ef4444';
@@ -550,7 +531,6 @@
                         icon:'warning', title: msg });
         }
 
-        // ── FAQ ────────────────────────────────────────────────────────────
         function toggleFaq(btn) {
             const item = btn.closest('.faq-item');
             const isOpen = item.classList.contains('open');

@@ -23,12 +23,6 @@ const communitySchema = new mongoose.Schema({
     bannerImage: { type: String, default: null },
     members:     [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     posts:       [postSchema],
-
-    // ── SUPER COMMUNITY ───────────────────────────────────────────────
-    // isSuper: true  → shown with ⭐ star badge
-    //                 → only admin + premium users can POST / REPLY
-    //                 → all users can VIEW/READ
-    //                 → admin uses it to announce new books, news etc.
     isSuper:     { type: Boolean, default: false },
 
     createdBy:   { type: mongoose.Schema.Types.ObjectId, ref: 'User' },

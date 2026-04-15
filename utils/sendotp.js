@@ -1,16 +1,11 @@
 // Import the updated Gmail API sendMail function
 const { sendMail } = require("./mailer"); 
 
-/**
- * Generates a random 6-digit numeric string
- */
+
 const generateOTP = () => {
     return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
-/**
- * Sends an OTP via Gmail API and returns the code for DB storage
- */
 const sendOTP = async (email) => {
     const otp = generateOTP();
 
@@ -32,10 +27,7 @@ const sendOTP = async (email) => {
     };
 
     try {
-        // Now using the Gmail API (HTTPS) method
         await sendMail(mailOptions);
-        
-        // Return the OTP so your Controller can save it to MongoDB
         return otp; 
     } catch (error) {
         console.error("❌ Failed to send OTP email:", error.message);

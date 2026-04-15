@@ -193,7 +193,6 @@
             const data = await res.json();
 
             if (data.success) {
-                // Animate out
                 const el = document.getElementById(`reply-${replyId}`);
                 if (el) {
                     el.style.transition = 'all .3s ease';
@@ -201,11 +200,9 @@
                     el.style.transform  = 'translateX(20px)';
                     setTimeout(() => {
                         el.remove();
-                        // Update count label
                         const remaining = document.querySelectorAll('[id^="reply-"]').length;
                         const label = document.getElementById('replyCountLabel');
                         if (label) label.textContent = `${remaining} Repl${remaining !== 1 ? 'ies' : 'y'}`;
-                        // Show empty state if no replies left
                         if (remaining === 0) {
                             document.getElementById('repliesList').innerHTML = `
                                 <div class="text-center py-14 bg-white rounded-2xl border-2 border-dashed border-slate-100">

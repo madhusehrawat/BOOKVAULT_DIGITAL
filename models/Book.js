@@ -18,15 +18,11 @@ const bookSchema = new mongoose.Schema({
     image:         { type: String, default: '/uploads/default-book.png' },
 
     // ── PDF ──────────────────────────────────────────────────────────────────
-    // Relative path from /public, e.g.  uploads/pdf/1712345678-mybook.pdf
-    // Set by the admin when uploading a book. Null = no PDF attached yet.
+    // pdfPath     = full Cloudinary HTTPS URL (used for redirect download)
+    // pdfPublicId = Cloudinary public_id (used to delete the file later)
     pdfPath:       { type: String, default: null },
-
-    // ── Premium gate ─────────────────────────────────────────────────────────
-    // true  → only users with isPremium:true may download
-    // false → any logged-in user may download
+    pdfPublicId:   { type: String, default: null },
     isPremium:     { type: Boolean, default: false },
-
     isActive:      { type: Boolean, default: true },
     averageRating: { type: Number, default: 5 },
     reviews:       [reviewSchema]

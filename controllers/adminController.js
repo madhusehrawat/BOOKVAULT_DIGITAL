@@ -1,9 +1,15 @@
 const User      = require('../models/User');
 const Book      = require('../models/Book');
 const Community = require('../models/Community');
-const { cloudinary, extractPublicId } = require('../config/cloudinary');
+const path      = require('path');
+const fs        = require('fs');
+const {
+    cloudinary,
+    uploadBufferToCloudinary,
+    deleteFromCloudinary,
+    extractPublicId
+} = require('../config/cloudinary');
 
-// GET /admin/dashboard
 exports.getDashboard = async (req, res) => {
     try {
         const [books, users, communities] = await Promise.all([
@@ -23,7 +29,6 @@ exports.getDashboard = async (req, res) => {
     }
 };
 
-// POST /admin/toggle-premium/:userId
 exports.toggleUserPremium = async (req, res) => {
     try {
         const user = await User.findById(req.params.userId);
@@ -36,7 +41,6 @@ exports.toggleUserPremium = async (req, res) => {
     }
 };
 
-// PATCH /admin/books/:id
 exports.updateBook = async (req, res) => {
     try {
         const allowed = ['title', 'author', 'price', 'averageRating', 'category', 'description', 'isPremium', 'isActive'];
@@ -50,8 +54,6 @@ exports.updateBook = async (req, res) => {
     }
 };
 
-// POST /admin/books/:id/upload-pdf
-// multer-storage-cloudinary sets req.file.path = permanent Cloudinary HTTPS URL
 exports.uploadBookPdf = async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ success: false, message: 'No PDF file received' });
@@ -59,47 +61,44 @@ exports.uploadBookPdf = async (req, res) => {
         const book = await Book.findById(req.params.id);
         if (!book) return res.status(404).json({ success: false, message: 'Book not found' });
 
-        // Delete old PDF from Cloudinary if present
-        if (book.pdfPath && book.pdfPath.startsWith('http')) {
-            const publicId = extractPublicId(book.pdfPath);
-            if (publicId) {
-                try { await cloudinary.uploader.destroy(publicId, { resource_type: 'raw' }); }
-                catch (e) { console.warn('Old PDF delete warning:', e.message); }
-            }
+        if (book.pdfPublicId) {
+            await deleteFromCloudinary(book.pdfPublicId, 'raw');
         }
 
-        // Save the Cloudinary URL directly
-        book.pdfPath = req.file.path;
+        const result = await uploadBufferToCloudinary(req.file.buffer, {
+            folder:        'bookvault/pdfs',
+            resource_type: 'raw',
+            public_id:     `${Date.now()}-${req.file.originalname.replace(/\s+/g, '_').replace('.pdf', '')}`,
+            format:        'pdf'
+        });
+
+        book.pdfPath     = result.secure_url;   // full Cloudinary HTTPS URL
+        book.pdfPublicId = result.public_id;    // for deletion later
         await book.save();
+
         res.json({ success: true, pdfPath: book.pdfPath });
     } catch (err) {
-        console.error('uploadBookPdf error:', err);
+        console.error('PDF upload error:', err);
         res.status(500).json({ success: false, message: err.message });
     }
 };
 
-// DELETE /admin/books/:id/delete-pdf
 exports.deleteBookPdf = async (req, res) => {
     try {
         const book = await Book.findById(req.params.id);
         if (!book) return res.status(404).json({ success: false, message: 'Book not found' });
-
-        if (book.pdfPath && book.pdfPath.startsWith('http')) {
-            const publicId = extractPublicId(book.pdfPath);
-            if (publicId) {
-                try { await cloudinary.uploader.destroy(publicId, { resource_type: 'raw' }); }
-                catch (e) { console.warn('Cloudinary PDF delete warning:', e.message); }
-            }
+        if (book.pdfPublicId) {
+            await deleteFromCloudinary(book.pdfPublicId, 'raw');
         }
 
-        await Book.findByIdAndUpdate(req.params.id, { $unset: { pdfPath: '' } });
+        book.pdfPath     = null;
+        book.pdfPublicId = null;
+        await book.save();
         res.json({ success: true });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
     }
 };
-
-// DELETE /admin/users/:id
 exports.deleteUser = async (req, res) => {
     try {
         await User.findByIdAndDelete(req.params.id);
@@ -109,7 +108,6 @@ exports.deleteUser = async (req, res) => {
     }
 };
 
-// DELETE /admin/communities/:id
 exports.deleteCircle = async (req, res) => {
     try {
         const community = await Community.findByIdAndDelete(req.params.id);
@@ -119,8 +117,6 @@ exports.deleteCircle = async (req, res) => {
         res.status(500).json({ success: false, message: err.message });
     }
 };
-
-// PATCH /admin/communities/:id
 exports.updateCircle = async (req, res) => {
     try {
         const { name, category, description } = req.body;
@@ -136,28 +132,22 @@ exports.updateCircle = async (req, res) => {
     }
 };
 
-// POST /admin/communities/create-super
-exports.createSuperCommunity = async (req, res) => {
-    try {
-        const { name, category, description } = req.body;
-        if (!name || !category || !description) {
-            return res.status(400).json({ success: false, message: 'All fields required' });
-        }
-        const community = new Community({
-            name, category, description,
-            isSuper:   true,
-            members:   [req.user._id],
-            createdBy: req.user._id
-        });
-        await community.save();
-        res.json({ success: true, community });
-    } catch (err) {
-        console.error('create-super error:', err);
-        res.status(500).json({ success: false, message: err.message });
-    }
-};
 
-// PATCH /admin/posts/:id/pin
+// exports.promoteToAdmin = async (req, res) => {
+//     try {
+//         const { email } = req.body;
+//         const user = await User.findOneAndUpdate(
+//             { email: email.toLowerCase().trim() },
+//             { role: 'admin' },
+//             { new: true }
+//         );
+//         if (!user) return res.status(404).json({ success: false, message: 'No user found with that email' });
+//         res.json({ success: true, message: `${user.username} has been promoted to Admin` });
+//     } catch (err) {
+//         res.status(500).json({ success: false, message: err.message });
+//     }
+// };
+
 exports.togglePinPost = async (req, res) => {
     try {
         const community = await Community.findOne({ 'posts._id': req.params.id });
@@ -171,7 +161,6 @@ exports.togglePinPost = async (req, res) => {
     }
 };
 
-// DELETE /admin/posts/:id
 exports.deletePost = async (req, res) => {
     try {
         const community = await Community.findOne({ 'posts._id': req.params.id });
@@ -184,7 +173,6 @@ exports.deletePost = async (req, res) => {
     }
 };
 
-// GET /admin/users/:id/library
 exports.getUserLibrary = async (req, res) => {
     try {
         const targetUser = await User.findById(req.params.id).populate('library');

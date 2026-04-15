@@ -9,7 +9,6 @@ const sendMail = async ({ to, subject, html ,replyTo}) => {
         "https://developers.google.com/oauthplayground"
     );
 
-    // DEBUG: Add this line to check if the token is actually there
     console.log("Checking Token:", process.env.GMAIL_REFRESH_TOKEN ? "Token Found ✅" : "Token Missing ❌");
 
     oauth2Client.setCredentials({
@@ -22,7 +21,6 @@ const sendMail = async ({ to, subject, html ,replyTo}) => {
 
         const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
 
-        // 4. Create the email content
         const str = [
             `To: ${to}`,
             `From: BookVault <${process.env.GMAIL_USER_EMAIL}>`,
@@ -35,14 +33,12 @@ const sendMail = async ({ to, subject, html ,replyTo}) => {
         ].join('\n');
         
 
-        // 5. Encode the email in Base64URL (Standard for Gmail API)
+        // (Standard for Gmail API)
         const encodedMail = Buffer.from(str)
             .toString('base64')
             .replace(/\+/g, '-')
             .replace(/\//g, '_')
             .replace(/=+$/, '');
-
-        // 6. Send it!
         await gmail.users.messages.send({
             userId: 'me',
             requestBody: {

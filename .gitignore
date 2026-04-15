@@ -27,7 +27,6 @@ build/
 # Ignore ONLY the pdf subfolder (large files, not needed in git)
 # Book cover images (jpg, jpeg, png, webp) MUST be tracked so they
 # deploy correctly to Render — DO NOT ignore the uploads root folder.
-public/uploads/pdf
 
 # IDE / Editor settings
 .vscode/

@@ -9,8 +9,6 @@ const otpStoreSchema = new mongoose.Schema({
     password: { type: String },         // hashed, only for signup
     expires: { type: Date, required: true }
 });
-
-// MongoDB will auto-delete documents once 'expires' is reached
 otpStoreSchema.index({ expires: 1 }, { expireAfterSeconds: 0 });
 
 module.exports = mongoose.model("OtpStore", otpStoreSchema);

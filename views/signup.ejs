@@ -105,16 +105,12 @@
     const passwordInput = document.getElementById("password");
     const togglePassword = document.getElementById("togglePassword");
     const eyeIcon = document.getElementById("eyeIcon");
-
-    // --- Password Visibility Toggle ---
     togglePassword.addEventListener("click", () => {
         const type = passwordInput.getAttribute("type") === "password" ? "text" : "password";
         passwordInput.setAttribute("type", type);
         eyeIcon.classList.toggle("fa-eye");
         eyeIcon.classList.toggle("fa-eye-slash");
     });
-
-    // --- Notification System ---
     function showNotification(message, isError = true) {
         toast.innerText = message;
         toast.style.backgroundColor = isError ? "#ef4444" : "#2563eb"; 
@@ -122,20 +118,17 @@
         setTimeout(() => { toast.classList.remove("show"); }, 3500);
     }
 
-    // --- Form Submission ---
     signupForm.addEventListener("submit", async (e) => {
         e.preventDefault();
         
-        // 1. DATA CLEANING: Convert email to lowercase immediately to match the DB Schema
         const username = document.getElementById("username").value.trim();
         const email = document.getElementById("email").value.trim().toLowerCase();
         const password = document.getElementById("password").value;
 
-        if (password.length < 8) {
-            return showNotification("Secret key must be at least 8 characters.");
+        if (password.length < 6) {
+            return showNotification("Secret key must be at least 6 characters.");
         }
 
-        // 2. LOADING STATE
         signupBtn.innerHTML = `<i class="fas fa-circle-notch fa-spin text-xl mr-2"></i> Initializing...`;
         signupBtn.disabled = true;
 
@@ -149,8 +142,6 @@
             const data = await res.json();
             
             if (data.success || res.status === 200 || res.status === 201) {
-                // 3. PERSISTENCE: Save to both Session and Local storage as a backup
-                // This prevents the "User not found" error on the next page
                 sessionStorage.setItem("verifyEmail", email);
                 localStorage.setItem("verifyEmail", email);
                 
@@ -160,7 +151,6 @@
                     window.location.href = "/verify-otp";
                 }, 1500);
             } else {
-                // Display specific error from your backend (e.g., "Email already exists")
                 showNotification(data.error || data.message || "Initialization failed.");
                 signupBtn.innerText = "Initialize Access";
                 signupBtn.disabled = false;

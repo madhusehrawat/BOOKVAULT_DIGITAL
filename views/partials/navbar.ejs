@@ -264,12 +264,10 @@ function handleSearchInput(value, sourceInput) {
     }, 300);
 }
 
-// Live filter the book grid (already on /books page)
 function liveFilterBooks(query) {
-    // Create params without search by default
+    
     const params = new URLSearchParams({ sort: 'newest', rating: 0, categories: '' });
     
-    // Only add search if query has content
     if (query) {
         params.set('search', query);
     }
@@ -282,7 +280,6 @@ function liveFilterBooks(query) {
         const grid = document.getElementById('bookGrid');
         if (grid) grid.innerHTML = html;
         
-        // Sync URL: If empty, remove the search query param entirely
         const newUrl = query 
             ? `/books?search=${encodeURIComponent(query)}` 
             : '/books';
@@ -290,17 +287,16 @@ function liveFilterBooks(query) {
     })
     .catch(err => console.error('Search error:', err));
 }
-// Fetch suggestions for dropdown
+
 async function fetchSuggestions(query, sourceInput) {
     try {
         const res  = await fetch(`/books/filter?search=${encodeURIComponent(query)}`, {
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
         });
-        // Parse titles from the HTML response using a DOM parser
         const html   = await res.text();
         const parser = new DOMParser();
         const doc    = parser.parseFromString(html, 'text/html');
-        const cards  = doc.querySelectorAll('h3');  // book title elements in bookCards.ejs
+        const cards  = doc.querySelectorAll('h3'); 
 
         const titles = [];
         cards.forEach(el => {
@@ -312,7 +308,7 @@ async function fetchSuggestions(query, sourceInput) {
             closeDropdown(); return;
         }
 
-        // Render dropdown near the input that's active
+
         searchResults.innerHTML = titles.map(title => `
             <div class="search-result-item px-4 py-3 cursor-pointer flex items-center gap-3 transition-colors"
                  onmousedown="navigateToSearch('${title.replace(/'/g, "\\'")}')">
@@ -328,7 +324,7 @@ async function fetchSuggestions(query, sourceInput) {
             </div>
         `;
 
-        // Position dropdown under whichever input is active
+        
         const rect = sourceInput.getBoundingClientRect();
         searchDropdown.style.display = 'block';
         searchDropdown.classList.remove('hidden');
@@ -352,7 +348,7 @@ function navigateToSearch(query) {
     closeDropdown();
     if (window.location.pathname === '/books') {
         liveFilterBooks(query);
-        // sync both inputs
+    
         desktopInput.value = query;
         if (mobileInput) mobileInput.value = query;
     } else {
@@ -360,7 +356,6 @@ function navigateToSearch(query) {
     }
 }
 
-// "/" shortcut focuses desktop search
 document.addEventListener('keydown', e => {
     if (e.key === '/' && document.activeElement !== desktopInput && document.activeElement !== mobileInput
         && !['INPUT','TEXTAREA'].includes(document.activeElement.tagName)) {
@@ -369,7 +364,6 @@ document.addEventListener('keydown', e => {
     }
 });
 
-// Pre-fill search input if page loaded with ?search= param
 window.addEventListener('DOMContentLoaded', () => {
     const params = new URLSearchParams(window.location.search);
     const q = params.get('search');
@@ -379,7 +373,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// ── SCROLL SHADOW ──────────────────────────────────────────────────────────
+
 window.addEventListener('scroll', () => {
     const nav = document.getElementById('mainNav');
     if (window.scrollY > 20) {

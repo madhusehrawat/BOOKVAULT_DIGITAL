@@ -41,10 +41,6 @@ const userSchema = new mongoose.Schema({
         default: false
     },
 
-    // ── SUBSCRIPTION DETAILS ──────────────────────────────────────────────
-    // Stores which plan the user bought and when it expires.
-    // expiresAt: null  means lifetime (never expires)
-    // plan: 'monthly' | 'annual' | 'lifetime'
     subscription: {
         plan:         { type: String, enum: ['monthly', 'annual', 'lifetime'], default: null },
         activatedAt:  { type: Date,   default: null },
@@ -64,20 +60,15 @@ const userSchema = new mongoose.Schema({
     resetPasswordExpires: Date
 }, { timestamps: true });
 
-// ── AUTO-EXPIRE PREMIUM ───────────────────────────────────────────────────
-// Called on every login via checkAuth/requireAuth to revoke expired plans.
 userSchema.methods.checkPremiumExpiry = function () {
     if (!this.isPremium) return;
     const { expiresAt, cancelledAt } = this.subscription || {};
-    // Lifetime plan (expiresAt null) never expires
     if (!expiresAt) return;
-    // If subscription has expired, revoke premium
     if (new Date() > new Date(expiresAt)) {
         this.isPremium = false;
     }
 };
 
-// ── PASSWORD HASHING HOOK ─────────────────────────────────────────────────
 userSchema.pre('save', async function () {
     if (!this.isModified('password')) return;
     if (this.password.startsWith('$2a$') || this.password.startsWith('$2b$')) return;

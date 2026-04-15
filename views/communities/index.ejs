@@ -71,7 +71,6 @@ async function joinCircle(id) {
         const data = await response.json();
 
         if (data.success) {
-            // Smoothly transform the button into the "Enter" state
             btn.className = "block w-full text-center py-4 bg-slate-900 text-white font-black rounded-2xl transition-all";
             btn.innerHTML = 'Joined! Redirecting...';
             setTimeout(() => {

@@ -1,7 +1,6 @@
 const Community = require('../models/Community');
 const User      = require('../models/User');
 
-// GET /communities — list all communities
 exports.getAllCommunities = async (req, res) => {
     try {
         // Super communities come first, then by member count
@@ -13,7 +12,6 @@ exports.getAllCommunities = async (req, res) => {
     }
 };
 
-// POST /communities/create — create a normal community
 exports.createCommunity = async (req, res) => {
     try {
         const { name, category, description } = req.body;
@@ -29,7 +27,6 @@ exports.createCommunity = async (req, res) => {
     }
 };
 
-// POST /admin/communities/create-super — admin creates a Super Community
 exports.createSuperCommunity = async (req, res) => {
     try {
         const { name, category, description } = req.body;
@@ -45,7 +42,6 @@ exports.createSuperCommunity = async (req, res) => {
     }
 };
 
-// GET /communities/:id — view a single community
 exports.getCommunity = async (req, res) => {
     try {
         const community = await Community.findById(req.params.id)
@@ -65,7 +61,6 @@ exports.getCommunity = async (req, res) => {
     }
 };
 
-// POST /communities/:id/join
 exports.toggleJoin = async (req, res) => {
     try {
         if (!req.user) return res.status(401).json({ success: false, message: 'Login required' });
@@ -85,7 +80,6 @@ exports.toggleJoin = async (req, res) => {
     }
 };
 
-// POST /communities/:id/posts — create a post
 exports.createPost = async (req, res) => {
     try {
         const community = await Community.findById(req.params.id);
@@ -112,13 +106,12 @@ exports.createPost = async (req, res) => {
     }
 };
 
-// POST /communities/posts/:postId/replies — add a reply
 exports.addReply = async (req, res) => {
     try {
         const community = await Community.findOne({ 'posts._id': req.params.postId });
         if (!community) return res.status(404).send('Post not found');
 
-        // Super community: only admin or premium users can reply
+    
         if (community.isSuper) {
             const isAdmin   = req.user.role === 'admin';
             const isPremium = req.user.isPremium;
@@ -140,7 +133,6 @@ exports.addReply = async (req, res) => {
     }
 };
 
-// DELETE /communities/posts/:postId/replies/:replyId — delete a reply
 exports.deleteReply = async (req, res) => {
     try {
         const community = await Community.findOne({ 'posts._id': req.params.postId });
@@ -151,7 +143,7 @@ exports.deleteReply = async (req, res) => {
 
         if (!reply) return res.status(404).json({ success: false, message: 'Reply not found' });
 
-        // Only reply author or admin can delete
+       
         const isAuthor = reply.userId.toString() === req.user._id.toString();
         const isAdmin  = req.user.role === 'admin';
         if (!isAuthor && !isAdmin) {
@@ -166,7 +158,7 @@ exports.deleteReply = async (req, res) => {
     }
 };
 
-// GET /communities/:communityId/posts/:postId — post detail page
+
 exports.getPost = async (req, res) => {
     try {
         const community = await Community.findById(req.params.communityId)

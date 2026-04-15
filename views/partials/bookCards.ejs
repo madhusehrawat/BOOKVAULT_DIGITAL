@@ -80,27 +80,15 @@
 <% } %>
 
 <script>
-    /**
-     * handleDownload
-     *
-     * ROOT CAUSE OF "PDF not found" error:
-     *   The old code did TWO requests:
-     *     1. fetch('/books/:id/download')  — carried cookies, got 200 OK
-     *     2. window.location.href = '...'  — browser navigation, NO cookie sent
-     *                                        → requireAuth redirected to /login
-     *                                        → browser followed redirect silently
-     *
-     * FIX: Do ONE fetch with credentials:'include' to validate access.
-     *      On success, create a temporary <a download> and programmatically click it.
-     *      The browser fires a GET with the session cookie → file downloads correctly.
-     */
+
+    
     async function handleDownload(event, bookId, bookIsPremium) {
         if (event) event.stopPropagation();
 
         const userLoggedIn  = <%= locals.user ? 'true' : 'false' %>;
         const userIsPremium = <%= (locals.user && user.isPremium) ? 'true' : 'false' %>;
 
-        // 1. Not logged in
+     
         if (!userLoggedIn) {
             return Swal.fire({
                 title: 'Vault Locked',
@@ -111,7 +99,6 @@
             }).then(r => { if (r.isConfirmed) window.location.href = '/login'; });
         }
 
-        // 2. Book is premium but user is not — block immediately, no network call needed
         if (bookIsPremium && !userIsPremium) {
             return Swal.fire({
                 title: '👑 Premium Content',
@@ -125,63 +112,45 @@
                 if (r.isConfirmed) window.location.href = '/premium';
             });
         }
-
-        // 3. User is allowed — single fetch with credentials to validate + get the file
         if (typeof showToast === 'function') showToast("Preparing your download...", "info");
 
         try {
-            const response = await fetch(`/books/${bookId}/download`, {
+            const check = await fetch(`/books/${bookId}/download`, {
                 method: 'GET',
-                credentials: 'include'   // sends the session cookie — critical!
+                credentials: 'include',
+                redirect: 'manual'  
             });
 
-            if (response.ok) {
-                // Server sent the file — convert the response body to a Blob
-                // and trigger a browser download without a second network request.
-                const blob = await response.blob();
-                const contentDisposition = response.headers.get('Content-Disposition') || '';
-                const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
-                const filename = filenameMatch ? filenameMatch[1] : 'book.pdf';
 
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = filename;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
+            if (check.status === 302 || check.status === 200 || check.type === 'opaqueredirect') {
+                showToast && showToast("Download starting!", "success");
+                window.location.href = `/books/${bookId}/download`;
+                return;
+            }
 
-                if (typeof showToast === 'function') showToast("Download started!", "success");
+            let data = {};
+            try { data = await check.json(); } catch(e) {}
 
+            if (check.status === 403 || data.isPremiumRequired) {
+                Swal.fire({
+                    title: 'Premium Required',
+                    text: data.message || 'Upgrade to download this book.',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'See Plans',
+                    confirmButtonColor: '#f59e0b'
+                }).then(r => { if (r.isConfirmed) window.location.href = '/premium'; });
+            } else if (check.status === 401) {
+                Swal.fire({
+                    title: 'Session Expired',
+                    text: 'Please log in again.',
+                    icon: 'warning',
+                    confirmButtonText: 'Login',
+                    confirmButtonColor: '#2563eb'
+                }).then(r => { if (r.isConfirmed) window.location.href = '/login'; });
             } else {
-                // Try to parse the JSON error from the server
-                const data = await response.json().catch(() => ({}));
-
-                if (response.status === 403 || data.isPremiumRequired) {
-                    Swal.fire({
-                        title: 'Premium Required',
-                        text: data.message || 'Upgrade to download this book.',
-                        icon: 'warning',
-                        showCancelButton: true,
-                        confirmButtonText: 'Upgrade Now',
-                        confirmButtonColor: '#f59e0b'
-                    }).then(r => {
-                        if (r.isConfirmed && typeof handlePremiumUpgrade === 'function') handlePremiumUpgrade();
-                    });
-                } else if (response.status === 401) {
-                    Swal.fire({
-                        title: 'Session Expired',
-                        text: 'Please log in again to continue.',
-                        icon: 'warning',
-                        confirmButtonText: 'Login',
-                        confirmButtonColor: '#2563eb'
-                    }).then(r => { if (r.isConfirmed) window.location.href = '/login'; });
-                } else {
-                    if (typeof showToast === 'function') {
-                        showToast(data.message || "Could not retrieve the file.", "error");
-                    }
-                }
+                if (typeof showToast === 'function')
+                    showToast(data.message || "Could not retrieve the file.", "error");
             }
         } catch (err) {
             console.error("Download Error:", err);
@@ -189,7 +158,6 @@
         }
     }
 
-    /** Share using Web Share API */
     async function shareBook(event, title, bookId) {
         event.stopPropagation();
         const url = `${window.location.origin}/books/${bookId}`;

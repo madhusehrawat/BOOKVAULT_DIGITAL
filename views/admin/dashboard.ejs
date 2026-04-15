@@ -29,46 +29,34 @@
   .display { font-family: 'Playfair Display', serif; }
   .mono { font-family: 'JetBrains Mono', monospace; }
 
-  /* Tab system */
   .tab-btn { transition: all .2s; }
   .tab-btn.active { background: var(--ink); color: #fff; }
   .tab-pane { display: none; }
   .tab-pane.active { display: block; }
 
-  /* Table rows */
   .data-row { transition: background .15s; }
   .data-row:hover { background: #fafafa; }
 
-  /* Stat card hover */
   .stat-card { transition: transform .2s, box-shadow .2s; }
   .stat-card:hover { transform: translateY(-4px); box-shadow: 0 16px 48px rgba(0,0,0,.10); }
-
-  /* Modal backdrop */
   .modal-wrap { backdrop-filter: blur(8px); }
 
-  /* Toggle switch */
   .toggle-track { width:44px; height:24px; border-radius:99px; transition: background .2s; cursor:pointer; display:inline-flex; align-items:center; padding:2px; }
   .toggle-thumb { width:20px; height:20px; border-radius:50%; background:#fff; box-shadow:0 1px 4px rgba(0,0,0,.25); transition: transform .2s; }
   .toggle-track.on { background: var(--amber); }
   .toggle-track.off { background: #d4d4d8; }
   .toggle-track.on .toggle-thumb { transform: translateX(20px); }
 
-  /* Search input */
   .search-input:focus { outline: none; box-shadow: 0 0 0 3px rgba(37,99,235,.15); }
 
-  /* Badge */
   .badge { display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:99px; font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; }
 
-  /* Pill button */
   .pill-btn { border-radius:99px; font-weight:700; font-size:12px; padding:6px 16px; transition: all .15s; cursor:pointer; border:none; }
   .pill-btn:hover { filter: brightness(.92); }
   .pill-btn:active { transform: scale(.96); }
-
-  /* Inline edit field */
   .inline-edit { border:none; background:transparent; font-family:inherit; font-size:inherit; font-weight:inherit; color:inherit; width:100%; }
   .inline-edit:focus { outline:2px solid var(--blue); border-radius:6px; background:#fff; padding:2px 6px; }
 
-  /* Scrollbar */
   ::-webkit-scrollbar { width:6px; height:6px; }
   ::-webkit-scrollbar-thumb { background:#d4d4d8; border-radius:99px; }
 
@@ -77,7 +65,6 @@
   @keyframes fadeIn { from{opacity:0}to{opacity:1} }
   .fade-in { animation: fadeIn .3s ease forwards; }
 
-  /* ── DROPDOWN ─────────────────────────────────── */
   .action-menu-wrap { position:relative; display:inline-block; }
   .action-menu-btn {
     display:inline-flex; align-items:center; gap:6px;
@@ -115,16 +102,12 @@
   .action-dropdown .danger { color:var(--red); }
   .action-dropdown .danger:hover { background:var(--red-light); }
   .action-dropdown .pdf-icon { color:var(--purple); }
-
-  /* Archive badge (replaces status toggle) */
   .archive-badge { display:inline-flex; align-items:center; gap:4px; padding:4px 12px; border-radius:99px; font-size:11px; font-weight:700; cursor:pointer; border:none; transition:all .2s; }
   .archive-badge.active-state { background:var(--green-light); color:var(--green); }
   .archive-badge.archived-state { background:var(--surface); color:var(--muted); border:1px solid var(--border); }
 </style>
 
 <div class="min-h-screen pb-20">
-
-  <!-- ── TOP HEADER ─────────────────────────────────────────────────────── -->
   <div style="background:var(--ink2)" class="px-8 py-7 mb-8">
     <div class="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-4">
       <div>
@@ -143,8 +126,6 @@
   </div>
 
   <div class="max-w-7xl mx-auto px-4 sm:px-8">
-
-    <!-- ── STAT CARDS ──────────────────────────────────────────────────── -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
       <div class="stat-card bg-white rounded-2xl p-6 border border-gray-100 shadow-sm slide-up" style="animation-delay:.05s">
         <div class="flex justify-between items-start mb-3">
@@ -180,16 +161,12 @@
       </div>
     </div>
 
-    <!-- ── TAB NAVIGATION ──────────────────────────────────────────────── -->
     <div class="flex gap-2 mb-6 bg-white p-1.5 rounded-2xl border border-gray-100 shadow-sm w-fit">
       <button onclick="switchTab('books')"   id="tab-books"   class="tab-btn active display text-sm font-bold px-5 py-2.5 rounded-xl">Books</button>
       <button onclick="switchTab('users')"   id="tab-users"   class="tab-btn display text-sm font-bold px-5 py-2.5 rounded-xl" style="color:var(--muted)">Members</button>
       <button onclick="switchTab('circles')" id="tab-circles" class="tab-btn display text-sm font-bold px-5 py-2.5 rounded-xl" style="color:var(--muted)">Communities</button>
     </div>
 
-    <!-- ════════════════════════════════════════════════════════════════════
-         TAB 1 — BOOKS
-    ════════════════════════════════════════════════════════════════════ -->
     <div id="pane-books" class="tab-pane active fade-in">
       <div class="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
 
@@ -326,9 +303,7 @@
       </div>
     </div>
 
-    <!-- ════════════════════════════════════════════════════════════════════
-         TAB 2 — USERS
-    ════════════════════════════════════════════════════════════════════ -->
+
     <div id="pane-users" class="tab-pane fade-in">
       <div class="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
 
@@ -421,9 +396,7 @@
       </div>
     </div>
 
-    <!-- ════════════════════════════════════════════════════════════════════
-         TAB 3 — COMMUNITIES
-    ════════════════════════════════════════════════════════════════════ -->
+ 
     <div id="pane-circles" class="tab-pane fade-in">
       <div class="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
 
@@ -557,9 +530,6 @@
 </div>
 
 
-<!-- ══════════════════════════════════════════════════════════════════════════
-     MODAL: ADD BOOK
-══════════════════════════════════════════════════════════════════════════ -->
 <div id="addBookModal" class="modal-wrap fixed inset-0 z-[200] hidden items-center justify-center p-4 bg-gray-900/50" style="display:none">
   <div class="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden" id="addBookContent">
     <div style="background:var(--ink2)" class="px-8 py-6 flex justify-between items-center">
@@ -653,9 +623,6 @@
 </div>
 
 
-<!-- ══════════════════════════════════════════════════════════════════════════
-     MODAL: EDIT BOOK
-══════════════════════════════════════════════════════════════════════════ -->
 <div id="editBookModal" class="modal-wrap fixed inset-0 z-[200] hidden items-center justify-center p-4 bg-gray-900/50" style="display:none">
   <div class="bg-white w-full max-w-xl rounded-3xl shadow-2xl overflow-hidden">
     <div style="background:var(--blue)" class="px-8 py-6 flex justify-between items-center">
@@ -720,10 +687,6 @@
   </div>
 </div>
 
-
-<!-- ══════════════════════════════════════════════════════════════════════════
-     MODAL: PDF MANAGER (view existing + delete + upload new)
-══════════════════════════════════════════════════════════════════════════ -->
 <div id="pdfManagerModal" class="modal-wrap fixed inset-0 z-[200] hidden items-center justify-center p-4 bg-gray-900/50" style="display:none">
   <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden">
     <div style="background:var(--purple)" class="px-8 py-6 flex justify-between items-center">
@@ -766,9 +729,6 @@
 </div>
 
 
-<!-- ══════════════════════════════════════════════════════════════════════════
-     MODAL: CREATE SUPER COMMUNITY (Admin only)
-══════════════════════════════════════════════════════════════════════════ -->
 <div id="superCommunityModal" class="modal-wrap fixed inset-0 z-[200] hidden items-center justify-center p-4 bg-gray-900/50" style="display:none">
   <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden">
     <div class="px-8 py-6 flex justify-between items-center" style="background:linear-gradient(135deg,#1c1c28,#1e1b4b)">
@@ -821,9 +781,7 @@
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════════════════════════════════════
-     MODAL: CREATE CIRCLE
-══════════════════════════════════════════════════════════════════════════ -->
+
 <div id="createCircleModal" class="modal-wrap fixed inset-0 z-[200] hidden items-center justify-center p-4 bg-gray-900/50" style="display:none">
   <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden">
     <div class="px-8 py-6 flex justify-between items-center" style="background:var(--purple)">
@@ -865,9 +823,7 @@
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════════════════════════════════════
-     MODAL: EDIT COMMUNITY
-══════════════════════════════════════════════════════════════════════════ -->
+
 <div id="editCircleModal" class="modal-wrap fixed inset-0 z-[200] hidden items-center justify-center p-4 bg-gray-900/50" style="display:none">
   <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden">
     <div class="px-8 py-6 flex justify-between items-center" style="background:var(--amber)">
@@ -913,7 +869,6 @@
 <script>
   const Toast = Swal.mixin({ toast:true, position:'top-end', showConfirmButton:false, timer:3500, timerProgressBar:true });
 
-  // ── TAB SWITCHING ──────────────────────────────────────────────────────────
   function switchTab(name) {
     ['books','users','circles'].forEach(t => {
       document.getElementById(`tab-${t}`).classList.toggle('active', t === name);
@@ -922,7 +877,6 @@
     });
   }
 
-  // ── MODAL HELPERS ──────────────────────────────────────────────────────────
   function openModal(id) {
     const el = document.getElementById(id);
     el.style.display = 'flex';
@@ -939,7 +893,7 @@
     });
   });
 
-  // ── DROPDOWN HELPERS ──────────────────────────────────────────────────────
+ 
   function closeAllDropdowns() {
     document.querySelectorAll('.action-dropdown.open').forEach(d => d.classList.remove('open'));
     document.querySelectorAll('.action-menu-btn.open').forEach(b => b.classList.remove('open'));
@@ -953,12 +907,12 @@
       btn.classList.add('open');
     }
   }
-  // Close dropdowns on outside click
+
   document.addEventListener('click', function(e) {
     if (!e.target.closest('.action-menu-wrap')) closeAllDropdowns();
   });
 
-  // ── ADD BOOK MODAL ─────────────────────────────────────────────────────────
+
   function openAddBookModal() { openModal('addBookModal'); }
 
   document.getElementById('addBookForm').addEventListener('submit', async (e) => {
@@ -984,7 +938,7 @@
     }
   });
 
-  // ── EDIT BOOK MODAL ────────────────────────────────────────────────────────
+ 
   function openEditBookModal(book) {
     document.getElementById('editBookId').value        = book._id;
     document.getElementById('editBookSubtitle').textContent = book.title;
@@ -1029,7 +983,6 @@
     }
   });
 
-  // ── PDF MANAGER MODAL ─────────────────────────────────────────────────────
   function openPdfManager(bookId, title, existingPdfPath) {
     document.getElementById('pdfManagerBookId').value      = bookId;
     document.getElementById('uploadPdfBookId').value       = bookId;
@@ -1063,7 +1016,6 @@
         </div>
       `;
       uploadLabel.textContent = 'Replace with New PDF';
-      // remove required so they can just delete without uploading
       document.getElementById('pdfFileInput').removeAttribute('required');
     } else {
       section.innerHTML = `
@@ -1125,7 +1077,7 @@
     }
   });
 
-  // ── INLINE PRICE UPDATE ────────────────────────────────────────────────────
+
   async function updatePrice(bookId, value) {
     const price = parseFloat(value);
     if (isNaN(price) || price < 0) return;
@@ -1139,7 +1091,7 @@
     } catch(e) { Toast.fire({ icon:'error', title:'Failed to update price' }); }
   }
 
-  // ── INLINE RATING UPDATE ───────────────────────────────────────────────────
+ 
   async function updateRating(bookId, value) {
     const rating = parseFloat(value);
     if (isNaN(rating) || rating < 1 || rating > 5) return;
@@ -1153,7 +1105,6 @@
     } catch(e) { Toast.fire({ icon:'error', title:'Failed to update rating' }); }
   }
 
-  // ── TOGGLE BOOK PREMIUM ────────────────────────────────────────────────────
   async function toggleBookPremium(bookId, track) {
     const isOn = track.classList.contains('on');
     try {
@@ -1170,7 +1121,7 @@
     } catch(e) { Toast.fire({ icon:'error', title:'Toggle failed' }); }
   }
 
-  // ── TOGGLE BOOK STATUS (Archive) ───────────────────────────────────────────
+  
   async function toggleBookStatus(bookId, btn) {
     const isActive = btn.classList.contains('active-state');
     try {
@@ -1204,7 +1155,7 @@
   //   } catch(e) { Toast.fire({ icon:'error', title:'Toggle failed' }); }
   // }
 
-  // ── DELETE BOOK ────────────────────────────────────────────────────────────
+  
   async function confirmDeleteBook(bookId, title) {
     const result = await Swal.fire({
       title: `Archive "${title}"?`,
@@ -1221,7 +1172,7 @@
     }
   }
 
-  // ── DELETE USER ────────────────────────────────────────────────────────────
+  
   async function confirmDeleteUser(userId, username) {
     const result = await Swal.fire({
       title: `Ban "${username}"?`,
@@ -1238,7 +1189,6 @@
     }
   }
 
-  // ── DELETE CIRCLE ──────────────────────────────────────────────────────────
   async function confirmDeleteCircle(id, name) {
     const result = await Swal.fire({
       title: `Terminate "${name}"?`,
@@ -1260,7 +1210,7 @@
     }
   }
 
-  // ── CREATE CIRCLE MODAL ────────────────────────────────────────────────────
+  
   function openCreateCircleModal() { openModal('createCircleModal'); }
 
   document.getElementById('createCircleForm').addEventListener('submit', async (e) => {
@@ -1297,7 +1247,7 @@
     }
   });
 
-  // ── EDIT CIRCLE MODAL ──────────────────────────────────────────────────────
+ 
   function openEditCircleModal(id, name, desc, category) {
     document.getElementById('editCircleId').value          = id;
     document.getElementById('editCircleName').value        = name;
@@ -1333,7 +1283,7 @@
     }
   });
 
-  // ── SUPER COMMUNITY MODAL ─────────────────────────────────────────────────
+ 
   function openCreateSuperCommunityModal() { openModal('superCommunityModal'); }
 
   document.getElementById('superCommunityForm').addEventListener('submit', async (e) => {
@@ -1370,7 +1320,7 @@
     }
   });
 
-  // ── FILTER CIRCLES ─────────────────────────────────────────────────────────
+ 
   function filterCircles() {
     const q   = document.getElementById('circleSearch').value.toLowerCase();
     const cat = document.getElementById('circleFilter').value;
@@ -1381,13 +1331,10 @@
     });
   }
 
-  // ── VIEW USER LIBRARY ──────────────────────────────────────────────────────
+ 
   function viewUserLibrary(userId, username) {
     window.location.href = `/admin/users/${userId}/library`;
   }
-
-  
-  // ── SEARCH / FILTER BOOKS ──────────────────────────────────────────────────
   function filterBooks() {
     const q      = document.getElementById('bookSearch').value.toLowerCase();
     const filter = document.getElementById('bookFilter').value;
@@ -1401,7 +1348,6 @@
     });
   }
 
-  // ── SEARCH USERS ───────────────────────────────────────────────────────────
   function filterUsers() {
     const q = document.getElementById('userSearch').value.toLowerCase();
     document.querySelectorAll('#usersBody tr').forEach(row => {

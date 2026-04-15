@@ -1,7 +1,5 @@
-const { sendMail } = require('../utils/mailer'); // Adjust path as needed
+const { sendMail } = require('../utils/mailer');
 
-
-// Render the contact page
 exports.getContact = (req, res) => {
     res.render('contact', { 
         user: req.user || null,
@@ -9,13 +7,10 @@ exports.getContact = (req, res) => {
     });
 };
 
-
-
 exports.postContact = async (req, res) => {
     try {
         const { name, email, subject, message } = req.body;
         
-        // 1. Validation
         if (!name || !email || !message) {
             return res.status(400).json({ 
                 success: false, 
@@ -23,7 +18,6 @@ exports.postContact = async (req, res) => {
             });
         }
 
-        // 2. Format the Email Content
         const emailContent = `
             <div style="font-family: sans-serif; border: 1px solid #eee; padding: 20px; border-radius: 10px;">
                 <h2 style="color: #2563eb;">New Support Ticket</h2>
@@ -34,7 +28,6 @@ exports.postContact = async (req, res) => {
             </div>
         `;
 
-        // 3. Send via Gmail API
         await sendMail({
     to: process.env.SUPPORT_EMAIL, 
     subject: `Contact: ${subject}`,

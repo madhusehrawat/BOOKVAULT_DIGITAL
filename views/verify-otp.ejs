@@ -85,8 +85,6 @@
 <div id="toast" class="toast"></div>
 
 <script>
- // 1. IMPROVED STATE RECOVERY: Check both storage types for the email
-    // During development, sometimes one gets cleared while the other persists.
     const email = sessionStorage.getItem("verifyEmail") || localStorage.getItem("verifyEmail");
     
     const toast = document.getElementById("toast");
@@ -94,14 +92,11 @@
     const verifyBtn = document.getElementById("verifyBtn");
     const otpInput = document.getElementById("otp");
     
-    // Redirect if no email is found to prevent "undefined" errors
     if (!email) {
         window.location.href = "/signup";
     } else {
         document.getElementById("instructionText").innerHTML = `Code sent to: <span class="text-blue-600 font-bold">${email}</span>`;
     }
-
-    // 2. INPUT SANITIZATION: Prevent non-numeric characters from being sent
     otpInput.addEventListener('input', (e) => {
         e.target.value = e.target.value.replace(/[^0-9]/g, '');
     });
@@ -117,7 +112,6 @@
         e.preventDefault();
         const otp = otpInput.value;
 
-        // Visual feedback
         verifyBtn.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i> Validating...`;
         verifyBtn.disabled = true;
 
@@ -125,7 +119,6 @@
             const res = await fetch("/verify-otp", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                // 3. EXPLICIT JSON: Ensure types are clear for the backend
                 body: JSON.stringify({ 
                     email: email.trim(), 
                     otp: otp.toString() 
@@ -133,18 +126,13 @@
             });
 
             const data = await res.json();
-
-            // Check for success property specifically
             if (data.success || res.status === 200) {
                 showNotification("Account Verified! Entering Vault...", false);
-                
-                // Cleanup
                 sessionStorage.removeItem("verifyEmail");
                 localStorage.removeItem("verifyEmail");
 
                 setTimeout(() => { window.location.href = "/login"; }, 2000);
             } else {
-                // Handle the "Verification sequence failed" error specifically
                 showNotification(data.error || data.message || "Sequence failed. Check code.");
                 verifyBtn.innerText = "Finalize Registration";
                 verifyBtn.disabled = false;

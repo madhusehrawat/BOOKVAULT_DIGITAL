@@ -79,8 +79,6 @@
         const btn = document.getElementById('submitBtn');
         const formData = new FormData(e.target);
         const data = Object.fromEntries(formData.entries());
-
-        // 1. Enter Loading State
         btn.disabled = true;
         const originalContent = btn.innerHTML;
         btn.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i> <span>Sending...</span>`;
@@ -95,12 +93,9 @@
             const result = await response.json();
 
             if (response.ok) {
-                // 2. Success State
                 btn.classList.replace('bg-slate-900', 'bg-green-500');
                 btn.innerHTML = `<i class="fas fa-check"></i> <span>Message Sent!</span>`;
                 e.target.reset();
-
-                // Reset button after 3 seconds
                 setTimeout(() => {
                     btn.disabled = false;
                     btn.classList.replace('bg-green-500', 'bg-slate-900');
@@ -112,8 +107,6 @@
         } catch (err) {
             console.error('Contact error:', err);
             alert(err.message || 'Something went wrong. Please try again.');
-            
-            // 3. Reset to original state on error
             btn.disabled = false;
             btn.innerHTML = originalContent;
         }

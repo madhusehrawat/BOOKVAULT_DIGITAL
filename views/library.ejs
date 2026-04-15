@@ -23,7 +23,7 @@
 
     <main class="max-w-7xl mx-auto px-6 py-12 flex-grow w-full">
 
-        <!-- ── HEADER ────────────────────────────────────────────────── -->
+       
         <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-6">
             <div>
                 <span class="text-blue-600 font-black text-[10px] uppercase tracking-[0.3em]">Personal Collection</span>
@@ -32,14 +32,13 @@
             </div>
 
             <div class="flex items-center gap-3 flex-wrap">
-                <!-- Book count badge -->
+
                 <div class="bg-white px-5 py-3 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-2">
                     <i class="fas fa-books text-blue-500 text-sm"></i>
                     <span class="text-slate-400 font-bold text-sm">Saved: </span>
                     <span id="totalCount" class="text-slate-900 font-black text-sm"><%= books.length %></span>
                 </div>
 
-                <!-- Export PDF — only for premium users -->
                 <% if (locals.user && user.isPremium) { %>
                     <a href="/books/download-library"
                        class="flex items-center gap-2 bg-slate-900 text-white px-5 py-3 rounded-2xl text-sm font-bold hover:bg-blue-600 transition-all shadow-lg active:scale-95">
@@ -54,7 +53,7 @@
             </div>
         </div>
 
-        <!-- ── BOOK GRID ─────────────────────────────────────────────── -->
+       
         <div id="libraryContainer">
             <% if (books && books.length > 0) { %>
                 <div id="bookGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
@@ -143,7 +142,6 @@
                 </div>
 
             <% } else { %>
-                <!-- Empty state -->
                 <div id="emptyState" class="text-center py-24 bg-white rounded-[3rem] border border-slate-100">
                     <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
                         <i class="far fa-bookmark text-slate-200 text-2xl"></i>
@@ -158,8 +156,6 @@
         </div>
 
     </main>
-
-    <!-- Empty state template (used by JS after last book removed) -->
     <template id="emptyStateTemplate">
         <div class="text-center py-24 bg-white rounded-[3rem] border border-slate-100 animate-in">
             <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -178,7 +174,7 @@
     <script>
         const userIsPremium = <%= (locals.user && user.isPremium) ? 'true' : 'false' %>;
 
-        // ── TOAST ──────────────────────────────────────────────────────────
+       
         function showToast(msg, type = 'success') {
             const colors = { success: '#2563eb', error: '#ef4444', warning: '#f59e0b', info: '#64748b' };
             Toastify({
@@ -188,8 +184,6 @@
             }).showToast();
         }
 
-        // ── DOWNLOAD ───────────────────────────────────────────────────────
-        // Uses blob method so the auth cookie is always sent (no double-fetch bug).
         async function downloadBook(bookId, bookIsPremium) {
             if (bookIsPremium === 'true' && !userIsPremium) {
                 return showPremiumPrompt('download');
@@ -234,7 +228,6 @@
             }
         }
 
-        // ── REMOVE FROM LIBRARY ────────────────────────────────────────────
         async function removeFromLibrary(bookId) {
             try {
                 const res  = await fetch(`/books/${bookId}/toggle-library`, {
@@ -255,7 +248,7 @@
             }
         }
 
-        // ── UPDATE COUNT / EMPTY STATE ─────────────────────────────────────
+      
         function updateLibraryUI() {
             const grid  = document.getElementById('bookGrid');
             const count = document.getElementById('totalCount');
@@ -271,7 +264,6 @@
             }
         }
 
-        // ── PREMIUM PROMPT ─────────────────────────────────────────────────
         function showPremiumPrompt(context) {
             const msg = context === 'export'
                 ? 'Exporting your full library as a PDF is a Premium feature.'

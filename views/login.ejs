@@ -113,7 +113,7 @@
     </main>
 
     <script>
-        // --- 1. Password Visibility ---
+    
         const togglePassword = document.querySelector('#togglePassword');
         const passwordInput = document.querySelector('#password');
         const eyeIcon = document.querySelector('#eyeIcon');
@@ -125,7 +125,7 @@
             eyeIcon.classList.toggle('fa-eye-slash');
         });
 
-        // --- 2. Error Feedback UI ---
+
         let popupTimeout;
         function showPopup(message) {
             const popup = document.getElementById('errorPopup');
@@ -154,7 +154,7 @@
             setTimeout(() => popup.classList.add('hidden'), 500);
         }
 
-        // --- 3. VAPID Key Helper (For Push Notifications) ---
+    
         function urlBase64ToUint8Array(base64String) {
             const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
             const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
@@ -166,7 +166,6 @@
             return outputArray;
         }
 
-        // --- 4. AJAX Login Logic ---
         const loginForm = document.getElementById('loginForm');
         const submitBtn = document.getElementById('submitBtn');
 
@@ -176,13 +175,12 @@
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
 
-            // Loading state
+        
             submitBtn.disabled = true;
             submitBtn.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i> Authorizing...`;
 
             let subscription = null;
 
-            // Attempt to register service worker and push notifications
             try {
                 if ('serviceWorker' in navigator && 'PushManager' in window) {
                     const registration = await navigator.serviceWorker.register('/sw.js');
@@ -214,7 +212,7 @@
                 const data = await res.json();
 
                 if (data.success) {
-                    // Smooth redirect
+                
                     window.location.assign(data.redirectUrl || '/books'); 
                 } else {
                     showPopup(data.error || "Login failed. Check your credentials.");

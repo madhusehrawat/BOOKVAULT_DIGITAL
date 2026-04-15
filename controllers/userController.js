@@ -1,16 +1,13 @@
 const User = require('../models/User'); 
 
-
 exports.getPremiumPage = (req, res) => {
     res.render('premium', { user: req.user || null });
 };
- 
-// POST /user/upgrade — activate premium after plan selection
+
 exports.upgradeToPremium = async (req, res) => {
     try {
         const { plan } = req.body; // 'monthly' | 'annual' | 'lifetime'
  
-        // Calculate expiry date based on plan
         let expiresAt = null;
         const now = new Date();
  
@@ -19,9 +16,8 @@ exports.upgradeToPremium = async (req, res) => {
         } else if (plan === 'annual') {
             expiresAt = new Date(now.setDate(now.getDate() + 365));
         } else if (plan === 'lifetime') {
-            expiresAt = null; // null = never expires
+            expiresAt = null; 
         } else {
-            // Fallback: treat any unknown plan as lifetime for backwards compat
             expiresAt = null;
         }
  
@@ -52,7 +48,6 @@ exports.upgradeToPremium = async (req, res) => {
     }
 };
  
-// POST /user/cancel-premium — cancel subscription (keeps access till expiry)
 exports.cancelPremium = async (req, res) => {
     try {
         await User.findByIdAndUpdate(req.user.id, {
@@ -69,7 +64,6 @@ exports.updateProfile = async (req, res) => {
         const { username, email } = req.body;
         const userId = req.user._id;
 
-        // Check for duplicate email before updating
         if (email) {
             const existingUser = await User.findOne({ email, _id: { $ne: userId } });
             if (existingUser) {

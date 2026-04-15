@@ -4,7 +4,6 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const sendOTP = require("../utils/sendotp");
 
-// --- Pages ---
 exports.getSignupPage = (req, res) => res.render("signup");
 
 exports.getLoginPage = (req, res) => {
@@ -14,7 +13,6 @@ exports.getLoginPage = (req, res) => {
 
 exports.getForgotPasswordPage = (req, res) => res.render("forgot-password", { error: null });
 
-// --- Signup Logic ---
 exports.postSignup = async (req, res) => {
     try {
         const { username, email, password } = req.body;
@@ -25,11 +23,8 @@ exports.postSignup = async (req, res) => {
             return res.status(400).json({ success: false, error: "This email is already registered in the Vault." });
         }
 
-        // 1. Send the OTP
         const otp = await sendOTP(normalizedEmail);
         
-        // 2. We don't hash the password here yet because we need to store 
-        // the plain password or the hash in OtpStore to create the user later.
         const hashedPassword = await bcrypt.hash(password, 10);
 
         await OtpStore.findOneAndUpdate(
@@ -44,14 +39,10 @@ exports.postSignup = async (req, res) => {
         res.status(500).json({ success: false, error: "Initialization failed. Please try again." });
     }
 };
-
-// --- Verify OTP & Account Creation ---
 exports.verifyOTP = async (req, res) => {
     try {
         const { email, otp } = req.body;
         const normalizedEmail = email.toLowerCase().trim();
-
-        // FIX: Search OtpStore, NOT User model (User doesn't exist yet!)
         const tempData = await OtpStore.findOne({ 
             email: normalizedEmail, 
             otp: otp.toString(), 
@@ -59,11 +50,8 @@ exports.verifyOTP = async (req, res) => {
         });
 
         if (!tempData) {
-            // This triggers the "User not found" or "Invalid code" error
             return res.status(400).json({ success: false, error: "Verification sequence failed. Invalid or expired code." });
         }
-
-        // 1. Move data from OtpStore to User collection
         const newUser = new User({
             username: tempData.username,
             email: tempData.email,
@@ -73,7 +61,6 @@ exports.verifyOTP = async (req, res) => {
 
         await newUser.save();
 
-        // 2. Cleanup: Remove temp data
         await OtpStore.deleteOne({ _id: tempData._id });
 
         res.status(200).json({ success: true });
@@ -84,7 +71,6 @@ exports.verifyOTP = async (req, res) => {
     }
 };
 
-// --- Resend OTP ---
 exports.resendOTP = async (req, res) => {
     try {
         const { email } = req.body;
@@ -104,7 +90,6 @@ exports.resendOTP = async (req, res) => {
     }
 };
 
-// --- Login Logic ---
 exports.postLogin = async (req, res) => {
     try {
         const { email, password, subscription } = req.body;
@@ -144,7 +129,6 @@ exports.postLogin = async (req, res) => {
     }
 };
 
-// --- Password Recovery ---
 exports.forgotPassword = async (req, res) => {
     try {
         const { email } = req.body;
