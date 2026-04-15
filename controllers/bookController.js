@@ -4,12 +4,12 @@ const User        = require('../models/User');
 const fs          = require('fs');
 const PDFDocument = require('pdfkit');
 const {
-    uploadBufferToCloudinary,
-    deleteFromCloudinary,
-    extractPublicId
+    uploadBufferToCloudinary,  // ✅ now exists in cloudinary.js
+    deleteFromCloudinary,      // ✅ now exists in cloudinary.js
+    extractPublicId            // ✅ now exists in cloudinary.js
 } = require('../config/cloudinary');
 
-// 1. Download Library as PDF (generated on the fly with pdfkit — no file storage needed)
+// 1. Download Library as PDF (generated on-the-fly with pdfkit)
 exports.downloadLibraryPDF = async (req, res) => {
     try {
         const user = await User.findById(req.user._id).populate('library');
@@ -95,9 +95,9 @@ exports.postReview = async (req, res) => {
 };
 
 // 4. ── DOWNLOAD A BOOK PDF ───────────────────────────────────────────────────
-// pdfPath is now a full Cloudinary HTTPS URL.
-// We simply redirect the browser to that URL — Cloudinary serves the file
-// directly, no server streaming needed. This works on Render (no local disk).
+// pdfPath is a full Cloudinary HTTPS URL stored in MongoDB.
+// We redirect the browser directly to that URL — Cloudinary serves the file.
+// DO NOT add fl_attachment to the URL — it causes HTTP 401 on free Cloudinary plans.
 exports.downloadBook = async (req, res) => {
     try {
         const book = await Book.findById(req.params.id);
@@ -106,7 +106,7 @@ exports.downloadBook = async (req, res) => {
         }
 
         // Premium gate
-        if (book.isPremium && !req.user.isPremium) {
+        if (book.isPremium && !req.user.isPremium && req.user.role !== 'admin') {
             return res.status(403).json({
                 success: false,
                 isPremiumRequired: true,
@@ -114,20 +114,31 @@ exports.downloadBook = async (req, res) => {
             });
         }
 
-        // Check PDF is linked
         if (!book.pdfPath) {
             return res.status(404).json({ success: false, message: "No PDF file is linked to this book yet." });
         }
 
-        // ── Cloudinary URL ────────────────────────────────────────────────────
-        // pdfPath is a full https://res.cloudinary.com/... URL.
-        // We redirect directly — the browser downloads from Cloudinary.
-        // fl_attachment forces download instead of in-browser preview.
-        const downloadUrl = book.pdfPath.includes('cloudinary.com')
-            ? book.pdfPath.replace('/upload/', '/upload/fl_attachment/')
-            : book.pdfPath;
+        console.log('[Download] pdfPath:', book.pdfPath);
 
-        return res.redirect(downloadUrl);
+        // ── Cloudinary URL → redirect directly (no fl_attachment — causes 401) ──
+        if (book.pdfPath.startsWith('http')) {
+            return res.redirect(book.pdfPath);
+        }
+
+        // ── Legacy local path fallback ──────────────────────────────────────
+        const cleanPath    = book.pdfPath.replace(/^\/+/, '');
+        const absolutePath = path.join(__dirname, '..', 'public', cleanPath);
+        if (!fs.existsSync(absolutePath)) {
+            return res.status(404).json({
+                success: false,
+                message: "PDF not found. Please re-upload through the admin panel."
+            });
+        }
+        res.download(absolutePath, `${book.title}.pdf`, (err) => {
+            if (err && !res.headersSent) {
+                res.status(500).json({ success: false, message: "Failed to stream the file." });
+            }
+        });
 
     } catch (err) {
         console.error("Download Error:", err);
@@ -135,32 +146,36 @@ exports.downloadBook = async (req, res) => {
     }
 };
 
-// 5. Admin: Add New Book (image + pdf both go to Cloudinary via memoryStorage)
+// 5. Admin: Add New Book
+// Uses uploadBufferToCloudinary so both image and PDF go to Cloudinary.
+// bookRoutes must use multer memoryStorage for this to work — see bookRoutes.js.
 exports.addBook = async (req, res) => {
     try {
         const { title, author, isbn, price, category, description, averageRating, isActive, isPremium } = req.body;
 
-        let imagePath    = '/uploads/default-book.png';
-        let pdfPath      = null;
-        let pdfPublicId  = null;
+        let imagePath   = '/uploads/default-book.png';
+        let pdfPath     = null;
+        let pdfPublicId = null;
 
         // Upload cover image to Cloudinary
         if (req.files && req.files.bookImage && req.files.bookImage[0]) {
             const imgResult = await uploadBufferToCloudinary(req.files.bookImage[0].buffer, {
                 folder:        'bookvault/covers',
                 resource_type: 'image',
-                transformation: [{ width: 600, height: 800, crop: 'limit', quality: 'auto' }]
+                transformation: [{ width: 400, height: 560, crop: 'fill', quality: 'auto' }],
             });
             imagePath = imgResult.secure_url;
         }
 
         // Upload PDF to Cloudinary
         if (req.files && req.files.bookPdf && req.files.bookPdf[0]) {
+            const safeId    = `${Date.now()}-${req.files.bookPdf[0].originalname.replace(/\s+/g, '_').replace(/\.pdf$/i, '')}`;
             const pdfResult = await uploadBufferToCloudinary(req.files.bookPdf[0].buffer, {
                 folder:        'bookvault/pdfs',
                 resource_type: 'raw',
-                public_id:     `${Date.now()}-${req.files.bookPdf[0].originalname.replace(/\s+/g, '_').replace('.pdf', '')}`,
-                format:        'pdf'
+                type:          'upload',   // PUBLIC — no auth required
+                public_id:     safeId,
+                format:        'pdf',
             });
             pdfPath     = pdfResult.secure_url;
             pdfPublicId = pdfResult.public_id;
@@ -170,11 +185,11 @@ exports.addBook = async (req, res) => {
             title, author, isbn, category, description,
             price:         parseFloat(price)         || 0,
             averageRating: parseFloat(averageRating) || 5,
-            isActive:      isActive   === 'true',
-            isPremium:     isPremium  === 'true',
+            isActive:      isActive  === 'true',
+            isPremium:     isPremium === 'true',
             image:         imagePath,
             pdfPath,
-            pdfPublicId
+            pdfPublicId,
         });
 
         res.status(201).json({ success: true });
@@ -221,7 +236,7 @@ exports.toggleReadingList = async (req, res) => {
         const bookId  = req.params.id;
         const isAdded = user.library.some(id => id.toString() === bookId.toString());
         if (isAdded) {
-            await User.findByIdAndUpdate(req.user._id, { $pull: { library: bookId } });
+            await User.findByIdAndUpdate(req.user._id, { $pull:     { library: bookId } });
         } else {
             await User.findByIdAndUpdate(req.user._id, { $addToSet: { library: bookId } });
         }
@@ -255,14 +270,12 @@ exports.getBookData = async (req, res) => {
 };
 
 // 12. GET /books/:id/pdf-url — return Cloudinary PDF URL for inline viewer
-// Does the same auth + premium checks as downloadBook but returns JSON URL
-// instead of a redirect, so the frontend can inject it into an iframe.
 exports.getPdfUrl = async (req, res) => {
     try {
         const book = await Book.findById(req.params.id);
         if (!book) return res.status(404).json({ success: false, message: 'Book not found.' });
 
-        if (book.isPremium && !req.user.isPremium) {
+        if (book.isPremium && !req.user.isPremium && req.user.role !== 'admin') {
             return res.status(403).json({
                 success: false,
                 isPremiumRequired: true,

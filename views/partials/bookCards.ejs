@@ -195,58 +195,68 @@
     }
 
     /** Open inline PDF reader modal */
-    async function openPdfViewer(event, bookId, bookTitle, bookIsPremium) {
-        if (event) event.stopPropagation();
+  async function openPdfViewer(event, bookId, bookTitle, bookIsPremium) {
+    if (event) event.stopPropagation();
 
-        const userLoggedIn  = <%= locals.user ? 'true' : 'false' %>;
-        const userIsPremium = <%= (locals.user && user.isPremium) ? 'true' : 'false' %>;
+    // 1. Auth & Premium Checks (Simplified)
+    const userLoggedIn  = <%= locals.user ? 'true' : 'false' %>;
+    const userIsPremium = <%= (locals.user && user.isPremium) ? 'true' : 'false' %>;
 
-        if (!userLoggedIn) {
-            return Swal.fire({
-                title: 'Login Required',
-                text: 'Please log in to read this book.',
-                icon: 'warning',
-                confirmButtonText: 'Sign In',
-                confirmButtonColor: '#2563eb'
-            }).then(r => { if (r.isConfirmed) window.location.href = '/login'; });
-        }
-
-        if (bookIsPremium && !userIsPremium) {
-            return Swal.fire({
-                title: '👑 Premium Content',
-                html: '<p style="color:#64748b">Reading this book requires a Premium membership.</p>',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonText: 'See Plans',
-                confirmButtonColor: '#f59e0b'
-            }).then(r => { if (r.isConfirmed) window.location.href = '/premium'; });
-        }
-
-        // Fetch the PDF URL from server (validates auth + gets Cloudinary URL)
-        if (typeof showToast === 'function') showToast('Opening reader…', 'info');
-
-        try {
-            const res = await fetch(`/books/${bookId}/pdf-url`, { credentials: 'include' });
-            const data = await res.json();
-
-            if (!res.ok || !data.success) {
-                if (res.status === 404) return showToast && showToast('No PDF linked to this book yet.', 'warning');
-                if (res.status === 403) return window.location.href = '/premium';
-                return showToast && showToast(data.message || 'Cannot open PDF.', 'error');
-            }
-
-            // Try to open in the inline viewer if it exists on this page
-            if (typeof window.openInlinePdfViewer === 'function') {
-                window.openInlinePdfViewer(data.url, bookTitle);
-            } else {
-                // Fallback: open in new tab (for library page etc.)
-                window.open(data.url, '_blank');
-            }
-        } catch (err) {
-            console.error('PDF viewer error:', err);
-            showToast && showToast('Connection error. Please try again.', 'error');
-        }
+    if (!userLoggedIn) {
+        return Swal.fire({
+            title: 'Login Required',
+            text: 'Please log in to read this book.',
+            icon: 'warning',
+            confirmButtonText: 'Sign In',
+            confirmButtonColor: '#2563eb'
+        }).then(r => { if (r.isConfirmed) window.location.href = '/login'; });
     }
+
+    if (bookIsPremium && !userIsPremium) {
+        return Swal.fire({
+            title: '👑 Premium Content',
+            html: '<p style="color:#64748b">Reading this book requires a Premium membership.</p>',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'See Plans',
+            confirmButtonColor: '#f59e0b'
+        }).then(r => { if (r.isConfirmed) window.location.href = '/premium'; });
+    }
+
+    // 2. Fetching Logic
+    if (typeof showToast === 'function') showToast('Opening reader...', 'info');
+
+    try {
+        const res = await fetch(`/books/${bookId}/pdf-url`, { credentials: 'include' });
+        const data = await res.json();
+
+        if (!res.ok || !data.success) {
+            const msg = data.message || 'Cannot open PDF.';
+            if (res.status === 404) return showToast?.('No PDF file found for this book.', 'warning');
+            if (res.status === 403) return window.location.href = '/premium';
+            return showToast?.(msg, 'error');
+        }
+
+        // 3. The Viewer Execution
+        // Ensure we force HTTPS to avoid "Mixed Content" white screens
+        const getSecureUrl = (url) => {
+    if (!url) return '';
+    // Replaces http:// with https://
+    return url.replace(/^http:\/\//i, 'https://');
+};
+
+        if (typeof window.openInlinePdfViewer === 'function') {
+            window.openInlinePdfViewer(getSecureUrl(data.url), bookTitle);
+        } else {
+            // Log for debugging: why is the inline viewer missing?
+            console.warn('Inline viewer not found, falling back to new tab.');
+            window.open(getSecureUrl(data.url), '_blank');
+        }
+    } catch (err) {
+        console.error('PDF fetch error:', err);
+        showToast?.('Connection error. Please try again.', 'error');
+    }
+}
     async function shareBook(event, title, bookId) {
         event.stopPropagation();
         const url = `${window.location.origin}/books/${bookId}`;
@@ -303,4 +313,24 @@
             console.error("Library sync error:", err);
         }
     }
+    window.openInlinePdfViewer = function(url, title) {
+    const modal = document.getElementById('pdfModal');
+    const iframe = document.getElementById('pdfFrame');
+    const titleEl = document.getElementById('pdfModalTitle');
+
+    if (!modal || !iframe) return console.error('Modal elements missing');
+
+    // 1. Clear the old source to force a fresh reload
+    iframe.src = 'about:blank';
+    if (titleEl) titleEl.innerText = title;
+
+    // 2. Show the modal
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+
+    // 3. Inject the URL after a short delay (Crucial for Chrome/Edge stability)
+    setTimeout(() => {
+        iframe.src = url;
+    }, 150);
+};
 </script>
