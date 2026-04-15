@@ -9,6 +9,7 @@ const {
     extractPublicId
 } = require('../config/cloudinary');
 
+// 1. Download Library as PDF (generated on the fly with pdfkit — no file storage needed)
 exports.downloadLibraryPDF = async (req, res) => {
     try {
         const user = await User.findById(req.user._id).populate('library');
@@ -39,6 +40,8 @@ exports.downloadLibraryPDF = async (req, res) => {
         res.status(500).send("Error generating PDF");
     }
 };
+
+// 2. Unified Catalog
 exports.getAllBooks = async (req, res) => {
     try {
         const { search, price, categories, rating, sort } = req.query;
@@ -70,6 +73,7 @@ exports.getAllBooks = async (req, res) => {
     }
 };
 
+// 3. Post a Review
 exports.postReview = async (req, res) => {
     try {
         const book = await Book.findById(req.params.id);
@@ -90,6 +94,7 @@ exports.postReview = async (req, res) => {
     }
 };
 
+// 4. ── DOWNLOAD A BOOK PDF ───────────────────────────────────────────────────
 // pdfPath is now a full Cloudinary HTTPS URL.
 // We simply redirect the browser to that URL — Cloudinary serves the file
 // directly, no server streaming needed. This works on Render (no local disk).
@@ -100,6 +105,7 @@ exports.downloadBook = async (req, res) => {
             return res.status(404).json({ success: false, message: "Book not found." });
         }
 
+        // Premium gate
         if (book.isPremium && !req.user.isPremium) {
             return res.status(403).json({
                 success: false,
@@ -107,9 +113,16 @@ exports.downloadBook = async (req, res) => {
                 message: "This content is restricted to Premium members only."
             });
         }
+
+        // Check PDF is linked
         if (!book.pdfPath) {
             return res.status(404).json({ success: false, message: "No PDF file is linked to this book yet." });
         }
+
+        // ── Cloudinary URL ────────────────────────────────────────────────────
+        // pdfPath is a full https://res.cloudinary.com/... URL.
+        // We redirect directly — the browser downloads from Cloudinary.
+        // fl_attachment forces download instead of in-browser preview.
         const downloadUrl = book.pdfPath.includes('cloudinary.com')
             ? book.pdfPath.replace('/upload/', '/upload/fl_attachment/')
             : book.pdfPath;
@@ -122,6 +135,7 @@ exports.downloadBook = async (req, res) => {
     }
 };
 
+// 5. Admin: Add New Book (image + pdf both go to Cloudinary via memoryStorage)
 exports.addBook = async (req, res) => {
     try {
         const { title, author, isbn, price, category, description, averageRating, isActive, isPremium } = req.body;
@@ -130,6 +144,7 @@ exports.addBook = async (req, res) => {
         let pdfPath      = null;
         let pdfPublicId  = null;
 
+        // Upload cover image to Cloudinary
         if (req.files && req.files.bookImage && req.files.bookImage[0]) {
             const imgResult = await uploadBufferToCloudinary(req.files.bookImage[0].buffer, {
                 folder:        'bookvault/covers',
@@ -138,6 +153,8 @@ exports.addBook = async (req, res) => {
             });
             imagePath = imgResult.secure_url;
         }
+
+        // Upload PDF to Cloudinary
         if (req.files && req.files.bookPdf && req.files.bookPdf[0]) {
             const pdfResult = await uploadBufferToCloudinary(req.files.bookPdf[0].buffer, {
                 folder:        'bookvault/pdfs',
@@ -167,6 +184,7 @@ exports.addBook = async (req, res) => {
     }
 };
 
+// 6. Admin: Deactivate
 exports.deactivateBook = async (req, res) => {
     try {
         await Book.findByIdAndUpdate(req.params.id, { isActive: false });
@@ -176,6 +194,7 @@ exports.deactivateBook = async (req, res) => {
     }
 };
 
+// 7. Admin: Toggle Active Status
 exports.toggleStatus = async (req, res) => {
     try {
         await Book.findByIdAndUpdate(req.params.id, { isActive: req.body.isActive });
@@ -185,6 +204,7 @@ exports.toggleStatus = async (req, res) => {
     }
 };
 
+// 8. Admin: Toggle Premium Status
 exports.togglePremium = async (req, res) => {
     try {
         await Book.findByIdAndUpdate(req.params.id, { isPremium: req.body.isPremium });
@@ -194,6 +214,7 @@ exports.togglePremium = async (req, res) => {
     }
 };
 
+// 9. Toggle Reading List
 exports.toggleReadingList = async (req, res) => {
     try {
         const user    = await User.findById(req.user._id);
@@ -210,6 +231,7 @@ exports.toggleReadingList = async (req, res) => {
     }
 };
 
+// 10. My Library Page
 exports.getMyLibrary = async (req, res) => {
     try {
         const user = await User.findById(req.user._id).populate('library');
@@ -221,11 +243,38 @@ exports.getMyLibrary = async (req, res) => {
     }
 };
 
+// 11. GET /books/:id/data — fresh book data for modal
 exports.getBookData = async (req, res) => {
     try {
         const book = await Book.findById(req.params.id);
         if (!book) return res.status(404).json({ success: false, message: 'Book not found' });
         res.json({ success: true, book });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+// 12. GET /books/:id/pdf-url — return Cloudinary PDF URL for inline viewer
+// Does the same auth + premium checks as downloadBook but returns JSON URL
+// instead of a redirect, so the frontend can inject it into an iframe.
+exports.getPdfUrl = async (req, res) => {
+    try {
+        const book = await Book.findById(req.params.id);
+        if (!book) return res.status(404).json({ success: false, message: 'Book not found.' });
+
+        if (book.isPremium && !req.user.isPremium) {
+            return res.status(403).json({
+                success: false,
+                isPremiumRequired: true,
+                message: 'Premium membership required to read this book.'
+            });
+        }
+
+        if (!book.pdfPath) {
+            return res.status(404).json({ success: false, message: 'No PDF linked to this book yet.' });
+        }
+
+        res.json({ success: true, url: book.pdfPath });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
     }

@@ -23,7 +23,7 @@
 
     <main class="max-w-7xl mx-auto px-6 py-12 flex-grow w-full">
 
-       
+        <!-- ── HEADER ────────────────────────────────────────────────── -->
         <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-6">
             <div>
                 <span class="text-blue-600 font-black text-[10px] uppercase tracking-[0.3em]">Personal Collection</span>
@@ -32,13 +32,14 @@
             </div>
 
             <div class="flex items-center gap-3 flex-wrap">
-
+                <!-- Book count badge -->
                 <div class="bg-white px-5 py-3 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-2">
                     <i class="fas fa-books text-blue-500 text-sm"></i>
                     <span class="text-slate-400 font-bold text-sm">Saved: </span>
                     <span id="totalCount" class="text-slate-900 font-black text-sm"><%= books.length %></span>
                 </div>
 
+                <!-- Export PDF — only for premium users -->
                 <% if (locals.user && user.isPremium) { %>
                     <a href="/books/download-library"
                        class="flex items-center gap-2 bg-slate-900 text-white px-5 py-3 rounded-2xl text-sm font-bold hover:bg-blue-600 transition-all shadow-lg active:scale-95">
@@ -53,7 +54,7 @@
             </div>
         </div>
 
-       
+        <!-- ── BOOK GRID ─────────────────────────────────────────────── -->
         <div id="libraryContainer">
             <% if (books && books.length > 0) { %>
                 <div id="bookGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
@@ -113,28 +114,32 @@
                                     <% } %>
                                 </div>
 
-                                <!-- Download button -->
+                                <!-- Action buttons -->
                                 <% if (book.isPremium && !(locals.user && user.isPremium)) { %>
-                                    <!-- Book is premium, user is not -->
                                     <button onclick="showPremiumPrompt('download')"
                                             class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gray-800 text-white rounded-2xl text-xs font-black hover:bg-amber-500 transition-all active:scale-95 shadow-sm">
                                         <i class="fas fa-lock text-xs"></i>
-                                        <span>Unlock to Download</span>
+                                        <span>Unlock to Access</span>
                                     </button>
                                 <% } else if (!book.pdfPath) { %>
-                                    <!-- No PDF linked yet -->
                                     <button disabled
                                             class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gray-100 text-gray-400 rounded-2xl text-xs font-black cursor-not-allowed">
                                         <i class="fas fa-file-times text-xs"></i>
                                         <span>PDF Not Available</span>
                                     </button>
                                 <% } else { %>
-                                    <!-- Available to download -->
-                                    <button onclick="downloadBook('<%= book._id %>', '<%= book.isPremium %>')"
-                                            class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl text-xs font-black transition-all active:scale-95 shadow-sm shadow-blue-100">
-                                        <i class="fas fa-download text-xs"></i>
-                                        <span>Download PDF</span>
-                                    </button>
+                                    <div class="flex gap-2">
+                                        <button onclick="openPdfViewer(event, '<%= book._id %>', '<%= book.title.replace(/'/g, "\\'") %>', <%= book.isPremium ? 'true' : 'false' %>)"
+                                                class="flex-1 flex items-center justify-center gap-1.5 px-3 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl text-xs font-black transition-all active:scale-95">
+                                            <i class="fas fa-book-open text-xs"></i>
+                                            <span>Read</span>
+                                        </button>
+                                        <button onclick="downloadBook('<%= book._id %>', '<%= book.isPremium %>')"
+                                                class="flex-1 flex items-center justify-center gap-1.5 px-3 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl text-xs font-black transition-all active:scale-95 shadow-sm shadow-blue-100">
+                                            <i class="fas fa-download text-xs"></i>
+                                            <span>Save</span>
+                                        </button>
+                                    </div>
                                 <% } %>
                             </div>
                         </div>
@@ -142,6 +147,7 @@
                 </div>
 
             <% } else { %>
+                <!-- Empty state -->
                 <div id="emptyState" class="text-center py-24 bg-white rounded-[3rem] border border-slate-100">
                     <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
                         <i class="far fa-bookmark text-slate-200 text-2xl"></i>
@@ -156,6 +162,8 @@
         </div>
 
     </main>
+
+    <!-- Empty state template (used by JS after last book removed) -->
     <template id="emptyStateTemplate">
         <div class="text-center py-24 bg-white rounded-[3rem] border border-slate-100 animate-in">
             <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -174,7 +182,23 @@
     <script>
         const userIsPremium = <%= (locals.user && user.isPremium) ? 'true' : 'false' %>;
 
-       
+        // ── Open PDF inline (new tab fallback since no viewer modal here) ──
+        async function openPdfViewer(event, bookId, bookTitle, bookIsPremium) {
+            if (event) event.stopPropagation();
+            if (bookIsPremium === 'true' && !userIsPremium) return showPremiumPrompt('download');
+            showToast('Opening reader…', 'info');
+            try {
+                const res  = await fetch(`/books/${bookId}/pdf-url`, { credentials: 'include' });
+                const data = await res.json();
+                if (data.success && data.url) {
+                    window.open(data.url, '_blank', 'noopener');
+                } else {
+                    showToast(data.message || 'Cannot open PDF.', 'error');
+                }
+            } catch(e) { showToast('Connection error', 'error'); }
+        }
+
+        // ── TOAST ──────────────────────────────────────────────────────────
         function showToast(msg, type = 'success') {
             const colors = { success: '#2563eb', error: '#ef4444', warning: '#f59e0b', info: '#64748b' };
             Toastify({
@@ -184,6 +208,8 @@
             }).showToast();
         }
 
+        // ── DOWNLOAD ───────────────────────────────────────────────────────
+        // Uses blob method so the auth cookie is always sent (no double-fetch bug).
         async function downloadBook(bookId, bookIsPremium) {
             if (bookIsPremium === 'true' && !userIsPremium) {
                 return showPremiumPrompt('download');
@@ -228,6 +254,7 @@
             }
         }
 
+        // ── REMOVE FROM LIBRARY ────────────────────────────────────────────
         async function removeFromLibrary(bookId) {
             try {
                 const res  = await fetch(`/books/${bookId}/toggle-library`, {
@@ -248,7 +275,7 @@
             }
         }
 
-      
+        // ── UPDATE COUNT / EMPTY STATE ─────────────────────────────────────
         function updateLibraryUI() {
             const grid  = document.getElementById('bookGrid');
             const count = document.getElementById('totalCount');
@@ -264,6 +291,7 @@
             }
         }
 
+        // ── PREMIUM PROMPT ─────────────────────────────────────────────────
         function showPremiumPrompt(context) {
             const msg = context === 'export'
                 ? 'Exporting your full library as a PDF is a Premium feature.'
