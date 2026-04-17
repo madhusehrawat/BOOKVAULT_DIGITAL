@@ -10,6 +10,7 @@ const communityRoutes = require('./routes/communityRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const userRoutes = require('./routes/userRoutes');
 const contactRoutes = require('./routes/contactRoutes');
+const pushRoutes = require('./routes/pushRoutes');
 const app = express();
 
 app.use(express.json());
@@ -30,6 +31,11 @@ app.use('/', authRoutes);
 app.use('/admin', adminRoutes);
 app.use('/', userRoutes);
 app.use('/', contactRoutes);
+app.use('/push', pushRoutes);
+app.use((req, res, next) => {
+    res.locals.VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY || '';
+    next();
+});
 app.get('/', async (req, res) => {
     try {
         const books = await Book.find({}); 

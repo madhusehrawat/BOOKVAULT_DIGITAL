@@ -1,77 +1,96 @@
 
-self.addEventListener("push", (event) => {
-    let data = {
-        title: "FullStack Café ☕",
-        body: "You have a new update on your order!",
-    };
+const CACHE_NAME = 'bookvault-v1';
 
-    if (event.data) {
-        try {
-            const payload = event.data.json();
-            data = { ...data, ...payload }; 
-        } catch (e) {
-            console.warn("Push payload was not JSON, using text as body.");
-            data.body = event.data.text();
+self.addEventListener('install', (event) => {
+    console.log('[SW] Installed BookVault Service Worker');
+    self.skipWaiting(); // Activate immediately without waiting
+});
+
+self.addEventListener('activate', (event) => {
+    console.log('[SW] Activated BookVault Service Worker');
+    event.waitUntil(
+        caches.keys().then(keys =>
+            Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+        ).then(() => clients.claim()) 
+    );
+});
+self.addEventListener('push', (event) => {
+    console.log('[SW] Push received:', event);
+
+    let data = {
+        title:'BookVault',
+        body:'You have a new update.',
+        url:'/books',
+        icon:'/uploads/default-book.png',
+        badge:'/uploads/default-book.png'
+    };
+    try {
+        if (event.data) {
+            const parsed = event.data.json();
+            data = { ...data, ...parsed };
         }
+    } catch (e) {
+        try {
+            data.body = event.data ? event.data.text() : data.body;
+        } catch (e2) {}
     }
 
     const options = {
         body: data.body,
-        icon: "/icons/favicon.png", 
-        badge: "/icons/favicon.png",
-       
-        vibrate: [300, 100, 400], 
-        
-        tag: "order-status", 
-        renotify: true, // Wake up the device even if a notification is already visible
-        
-        data: {
-            // Priority: payload.url > payload.data.url > fallback /orders
-            url: data.url || (data.data && data.data.url) || "/orders",
-        },
-        
-        // Interactive Buttons
+        icon: data.icon  || '/uploads/default-book.png',
+        badge: data.badge || '/uploads/default-book.png',
+        data: { url: data.url || '/books' },
+        vibrate: [200, 100, 200],
         actions: [
-            { action: 'view-order', title: 'View Order 📦' },
-            { action: 'close', title: 'Dismiss' }
-        ]
+            { action: 'open',    title: 'Open BookVault' },
+            { action: 'dismiss', title: 'Dismiss' }
+        ],
+        requireInteraction: false,
+        tag: 'bookvault-notification' 
     };
 
-    event.waitUntil(self.registration.showNotification(data.title, options));
-});
-
-// 2. Notification Click: Opens the app or focuses an existing tab
-self.addEventListener("notificationclick", (event) => {
-    event.notification.close();
-
-    // If user clicked "Dismiss", just stop here
-    if (event.action === 'close') return;
-
-    // Use URL constructor to ensure we have a valid absolute URL
-    const targetUrl = new URL(event.notification.data.url, self.location.origin).href;
-
     event.waitUntil(
-        clients.matchAll({ type: "window", includeUncontrolled: true })
-            .then((windowClients) => {
-                // 1. Try to find an existing open tab and focus it
-                for (let client of windowClients) {
-                    if (client.url === targetUrl && "focus" in client) {
-                        return client.focus();
-                    }
-                }
-                // 2. If no tab is open, open a new window
-                if (clients.openWindow) {
-                    return clients.openWindow(targetUrl);
-                }
-            })
+        self.registration.showNotification(data.title, options)
     );
 });
 
-// 3. Lifecycle Management
-self.addEventListener("install", () => {
-    self.skipWaiting(); // Force the new SW to activate immediately
-});
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
 
-self.addEventListener("activate", (event) => {
-    event.waitUntil(clients.claim()); // Take control of all open tabs immediately
+    if (event.action === 'dismiss') return;
+
+    const url = event.notification.data?.url || '/books';
+    const fullUrl = self.location.origin + url;
+
+    event.waitUntil(
+        clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+            for (const client of clientList) {
+                if (client.url.includes(self.location.origin) && 'focus' in client) {
+                    client.focus();
+                    return client.navigate(fullUrl);
+                }
+            }
+            if (clients.openWindow) {
+                return clients.openWindow(fullUrl);
+            }
+        })
+    );
+});
+self.addEventListener('pushsubscriptionchange', (event) => {
+    console.log('[SW] Push subscription changed — re-subscribing...');
+    event.waitUntil(
+        self.registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: event.oldSubscription
+                ? event.oldSubscription.options.applicationServerKey
+                : null
+        }).then((newSubscription) => {
+            return fetch('/push/subscribe', {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ subscription: newSubscription })
+            });
+        })
+    );
 });

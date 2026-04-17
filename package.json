@@ -2,7 +2,7 @@
   "name": "librarymanagementsystem",
   "version": "1.0.0",
   "description": "",
-  "main": "app.js",
+  "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node index.js",
@@ -14,9 +14,11 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "axios": "^1.15.0",
     "bcryptjs": "^3.0.3",
     "cloudinary": "^1.41.3",
     "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
     "dotenv": "^17.4.1",
     "ejs": "^5.0.1",
     "express": "^5.2.1",

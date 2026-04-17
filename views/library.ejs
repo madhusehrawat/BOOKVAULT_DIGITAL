@@ -22,8 +22,6 @@
     <%- include('./partials/navbar') %>
 
     <main class="max-w-7xl mx-auto px-6 py-12 flex-grow w-full">
-
-        <!-- ── HEADER ────────────────────────────────────────────────── -->
         <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-6">
             <div>
                 <span class="text-blue-600 font-black text-[10px] uppercase tracking-[0.3em]">Personal Collection</span>
@@ -32,14 +30,14 @@
             </div>
 
             <div class="flex items-center gap-3 flex-wrap">
-                <!-- Book count badge -->
+    
                 <div class="bg-white px-5 py-3 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-2">
                     <i class="fas fa-books text-blue-500 text-sm"></i>
                     <span class="text-slate-400 font-bold text-sm">Saved: </span>
                     <span id="totalCount" class="text-slate-900 font-black text-sm"><%= books.length %></span>
                 </div>
 
-                <!-- Export PDF — only for premium users -->
+               
                 <% if (locals.user && user.isPremium) { %>
                     <a href="/books/download-library"
                        class="flex items-center gap-2 bg-slate-900 text-white px-5 py-3 rounded-2xl text-sm font-bold hover:bg-blue-600 transition-all shadow-lg active:scale-95">
@@ -54,21 +52,17 @@
             </div>
         </div>
 
-        <!-- ── BOOK GRID ─────────────────────────────────────────────── -->
         <div id="libraryContainer">
             <% if (books && books.length > 0) { %>
                 <div id="bookGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
                     <% books.forEach(book => { %>
                         <div id="book-card-<%= book._id %>"
                              class="animate-in group relative bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-500 overflow-hidden flex flex-col">
-
-                            <!-- Cover image -->
                             <div class="relative aspect-[3/4] overflow-hidden bg-gray-100">
                                 <img src="<%= book.image %>"
                                      alt="<%= book.title %>"
                                      class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110">
 
-                                <!-- Badges -->
                                 <div class="absolute bottom-3 left-3 flex flex-col gap-1.5">
                                     <% if (book.isPremium) { %>
                                         <span class="px-2.5 py-1 bg-amber-500/90 backdrop-blur-sm text-white text-[9px] font-black uppercase tracking-tight rounded-lg flex items-center gap-1 w-fit">
@@ -79,15 +73,12 @@
                                         <%= book.category %>
                                     </span>
                                 </div>
-
-                                <!-- Remove from library button (top right on hover) -->
                                 <button onclick="removeFromLibrary('<%= book._id %>')"
                                         class="absolute top-3 right-3 w-9 h-9 rounded-xl bg-white/90 backdrop-blur-sm flex items-center justify-center text-red-400 hover:text-red-600 hover:scale-110 shadow-md transition-all duration-200 opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0">
                                     <i class="fas fa-heart-broken text-sm"></i>
                                 </button>
                             </div>
 
-                            <!-- Card body -->
                             <div class="p-5 flex flex-col flex-grow">
                                 <div class="flex-grow mb-4">
                                     <h3 class="text-base font-black text-gray-900 leading-tight line-clamp-2 group-hover:text-blue-600 transition-colors">
@@ -96,7 +87,6 @@
                                     <p class="text-gray-500 text-xs font-medium mt-1">by <%= book.author %></p>
                                 </div>
 
-                                <!-- Rating + Price row -->
                                 <div class="flex items-center justify-between mb-4 pt-3 border-t border-gray-50">
                                     <div class="flex items-center gap-1">
                                         <i class="fas fa-star text-yellow-400 text-xs"></i>
@@ -104,7 +94,6 @@
                                             <%= book.averageRating ? book.averageRating.toFixed(1) : '5.0' %>
                                         </span>
                                     </div>
-                                    <!-- Price shown as retail value info, not a paywall -->
                                     <% if (book.price && book.price > 0) { %>
                                         <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-lg">
                                             Worth $<%= book.price.toFixed(2) %>
@@ -113,8 +102,6 @@
                                         <span class="text-xs font-bold text-blue-500 bg-blue-50 px-2 py-0.5 rounded-lg">Free</span>
                                     <% } %>
                                 </div>
-
-                                <!-- Action buttons -->
                                 <% if (book.isPremium && !(locals.user && user.isPremium)) { %>
                                     <button onclick="showPremiumPrompt('download')"
                                             class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gray-800 text-white rounded-2xl text-xs font-black hover:bg-amber-500 transition-all active:scale-95 shadow-sm">
@@ -134,11 +121,11 @@
                                             <i class="fas fa-book-open text-xs"></i>
                                             <span>Read</span>
                                         </button>
-                                        <button onclick="downloadBook('<%= book._id %>', '<%= book.isPremium %>')"
-                                                class="flex-1 flex items-center justify-center gap-1.5 px-3 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl text-xs font-black transition-all active:scale-95 shadow-sm shadow-blue-100">
-                                            <i class="fas fa-download text-xs"></i>
-                                            <span>Save</span>
-                                        </button>
+                                       <button onclick="downloadBook('<%= book._id %>', <%= book.isPremium %>)"
+        class="flex-1 flex items-center justify-center gap-1.5 px-3 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl text-xs font-black transition-all active:scale-95 shadow-sm shadow-blue-100">
+    <i class="fas fa-download text-xs"></i>
+    <span>Save</span>
+</button>
                                     </div>
                                 <% } %>
                             </div>
@@ -147,7 +134,6 @@
                 </div>
 
             <% } else { %>
-                <!-- Empty state -->
                 <div id="emptyState" class="text-center py-24 bg-white rounded-[3rem] border border-slate-100">
                     <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
                         <i class="far fa-bookmark text-slate-200 text-2xl"></i>
@@ -163,7 +149,6 @@
 
     </main>
 
-    <!-- Empty state template (used by JS after last book removed) -->
     <template id="emptyStateTemplate">
         <div class="text-center py-24 bg-white rounded-[3rem] border border-slate-100 animate-in">
             <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -181,8 +166,6 @@
 
     <script>
         const userIsPremium = <%= (locals.user && user.isPremium) ? 'true' : 'false' %>;
-
-        // ── Open PDF inline (new tab fallback since no viewer modal here) ──
         async function openPdfViewer(event, bookId, bookTitle, bookIsPremium) {
             if (event) event.stopPropagation();
             if (bookIsPremium === 'true' && !userIsPremium) return showPremiumPrompt('download');
@@ -198,7 +181,7 @@
             } catch(e) { showToast('Connection error', 'error'); }
         }
 
-        // ── TOAST ──────────────────────────────────────────────────────────
+      
         function showToast(msg, type = 'success') {
             const colors = { success: '#2563eb', error: '#ef4444', warning: '#f59e0b', info: '#64748b' };
             Toastify({
@@ -208,56 +191,45 @@
             }).showToast();
         }
 
-        // ── DOWNLOAD ───────────────────────────────────────────────────────
-        // Uses blob method so the auth cookie is always sent (no double-fetch bug).
-        async function downloadBook(bookId, bookIsPremium) {
-            if (bookIsPremium === 'true' && !userIsPremium) {
-                return showPremiumPrompt('download');
-            }
+       
+   async function handleDownload(bookId, isPremiumBook) {
+    if (isPremiumBook && typeof userIsPremium !== 'undefined' && !userIsPremium) {
+        return showPremiumPrompt();
+    }
 
-            showToast('Preparing download…', 'info');
+    showToast('Starting download...', 'info');
 
-            try {
-                const response = await fetch(`/books/${bookId}/download`, {
-                    method: 'GET',
-                    credentials: 'include'
-                });
+    try {
+        const response = await fetch(`/books/${bookId}/download`, {
+            method: 'GET',
+            credentials: 'include' 
+        });
 
-                if (response.ok) {
-                    const blob = await response.blob();
-                    const cd   = response.headers.get('Content-Disposition') || '';
-                    const nameMatch = cd.match(/filename="?([^"]+)"?/);
-                    const filename  = nameMatch ? nameMatch[1] : 'book.pdf';
-
-                    const url = URL.createObjectURL(blob);
-                    const a   = document.createElement('a');
-                    a.href = url; a.download = filename;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-                    showToast('Download started!', 'success');
-
-                } else {
-                    const data = await response.json().catch(() => ({}));
-                    if (response.status === 403 || data.isPremiumRequired) {
-                        showPremiumPrompt('download');
-                    } else if (response.status === 401) {
-                        window.location.href = '/login';
-                    } else {
-                        showToast(data.message || 'Download failed.', 'error');
-                    }
-                }
-            } catch (err) {
-                console.error('Download error:', err);
-                showToast('Connection error. Please try again.', 'error');
-            }
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Download failed');
         }
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `book_${bookId}.pdf`; 
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }, 100);
 
-        // ── REMOVE FROM LIBRARY ────────────────────────────────────────────
+        showToast('Download complete!', 'success');
+    } catch (err) {
+        console.error('Download Error:', err);
+        showToast(err.message || 'Connection error. Please try again.', 'error');
+    }
+}
         async function removeFromLibrary(bookId) {
             try {
-                const res  = await fetch(`/books/${bookId}/toggle-library`, {
+                const res= await fetch(`/books/${bookId}/toggle-library`, {
                     method: 'POST', credentials: 'include'
                 });
                 const data = await res.json();
@@ -275,7 +247,6 @@
             }
         }
 
-        // ── UPDATE COUNT / EMPTY STATE ─────────────────────────────────────
         function updateLibraryUI() {
             const grid  = document.getElementById('bookGrid');
             const count = document.getElementById('totalCount');
@@ -286,12 +257,10 @@
 
             if (remaining === 0) {
                 const container = document.getElementById('libraryContainer');
-                const tpl       = document.getElementById('emptyStateTemplate');
+                const tpl = document.getElementById('emptyStateTemplate');
                 container.innerHTML = tpl.innerHTML;
             }
         }
-
-        // ── PREMIUM PROMPT ─────────────────────────────────────────────────
         function showPremiumPrompt(context) {
             const msg = context === 'export'
                 ? 'Exporting your full library as a PDF is a Premium feature.'
