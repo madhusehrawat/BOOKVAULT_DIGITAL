@@ -1,6 +1,6 @@
 # 📚 Book Vault | Premium Digital Library
 
-A professional full-stack E-commerce platform and digital asset library built with the **Node.js MVC architecture**. This application features secure user authentication, a premium subscription model, and an administrative dashboard for real-time metrics.
+A professional full-stack E-commerce platform and digital asset library built with the **Node.js MVC architecture**. This application features secure user authentication, a premium subscription model,community features with real time notification  and an administrative dashboard for real-time metrics.
 
 ## 🚀 Key Features
 
@@ -24,9 +24,4 @@ A professional full-stack E-commerce platform and digital asset library built wi
 * Node.js (v16 or higher)
 * MongoDB Atlas Account
 
-### Installation
 
-1. **Clone the repository**
-   ```bash
-   git clone [https://github.com/madhusehrawat/Book_Vault.git](https://github.com/madhusehrawat/Book_Vault.git)
-   cd Book_Vault
